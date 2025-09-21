@@ -1,0 +1,99 @@
+﻿<UserControl x:Class="PerfusionAnalyzer.Views.PerfusionParametersView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:oxy="http://oxyplot.org/wpf"
+             xmlns:glWpfControl="clr-namespace:OpenTK.Wpf;assembly=GLWpfControl"
+             mc:Ignorable="d"
+             d:DesignHeight="400"
+             d:DesignWidth="600">
+
+    <Grid Margin="10">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Grid Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Orientation="Vertical" Grid.Row="0" HorizontalAlignment="Left" Width="350">
+                <TextBlock Text="Розрахунок перфузійних параметрів" FontSize="16" FontWeight="Bold" Margin="0,0,0,15" />
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="AUC:" VerticalAlignment="Center" Grid.Column="0"/>
+                    <TextBox Text="{Binding AUCResult}" IsReadOnly="True" Height="25" Width="90" Grid.Column="1" HorizontalContentAlignment="Right" />
+                </Grid>
+
+                <Grid Margin="0,0,0,10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="MTT:" VerticalAlignment="Center" Grid.Column="0"/>
+                    <TextBox Text="{Binding MTTResult}" IsReadOnly="True" Height="25" Width="90" Grid.Column="1" HorizontalContentAlignment="Right" />
+                </Grid>
+
+                <Grid Margin="0,0,0,20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="100"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="TTP:" VerticalAlignment="Center" Grid.Column="0"/>
+                    <TextBox Text="{Binding TTPResult}" IsReadOnly="True" Height="25" Width="90" Grid.Column="1" HorizontalContentAlignment="Right" />
+                </Grid>
+
+                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" FontWeight="Bold" TextWrapping="Wrap" Margin="0,10,0,0"/>
+            </StackPanel>
+
+            <oxy:PlotView 
+                Grid.Row="1"
+                Model="{Binding PerfusionPlotModel}"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Margin="0,10,0,0"/>
+        </Grid>
+
+        <Grid Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <glWpfControl:GLWpfControl
+                x:Name="OpenTkControl"
+                Render="OpenTkControl_OnRender"
+                Grid.Row="0"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"/>
+
+            <Grid Grid.Row="1" Margin="0,10,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Grid.Column="0" HorizontalAlignment="Left">
+                    <TextBlock Text="Параметр:" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <ComboBox Width="100"
+                              SelectedItem="{Binding SelectedDescriptor, Mode=TwoWay}"
+                              ItemsSource="{Binding AvailableDescriptors}"/>
+                </StackPanel>
+
+                <Button Grid.Column="1"
+                        Content="Експортувати"
+                        Width="100"
+                        Command="{Binding ExportMapCommand}"
+                        HorizontalAlignment="Right"/>
+            </Grid>
+        </Grid>
+    </Grid>
+</UserControl>

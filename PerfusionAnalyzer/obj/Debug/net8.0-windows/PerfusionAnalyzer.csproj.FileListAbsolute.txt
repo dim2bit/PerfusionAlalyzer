@@ -1,0 +1,106 @@
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\MainWindow.g.cs
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\App.g.cs
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer_MarkupCompile.cache
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer_MarkupCompile.lref
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.exe
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.deps.json
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.runtimeconfig.json
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.pdb
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\MainWindow.baml
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.g.resources
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.GeneratedMSBuildEditorConfig.editorconfig
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.AssemblyInfoInputs.cache
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.AssemblyInfo.cs
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.csproj.CoreCompileInputs.cache
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\refint\PerfusionAnalyzer.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.pdb
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.genruntimeconfig.cache
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\ref\PerfusionAnalyzer.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\FramesView.g.cs
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\FramesView.baml
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Audio.OpenAL.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Compute.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Core.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Graphics.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Input.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Mathematics.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Windowing.Common.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Windowing.Desktop.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Windowing.GraphicsLibraryFramework.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\linux-x64\native\libglfw.so.3
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\osx-arm64\native\libglfw.3.dylib
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\osx-x64\native\libglfw.3.dylib
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win-x64\native\glfw3.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win-x86\native\glfw3.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.csproj.AssemblyReference.cache
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Perfusio.C890405E.Up2Date
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\csharls.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\CSJ2K.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\Dicom.Core.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\GLWpfControl.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\BitMiracle.LibJpeg.NetCore.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win7-x64\native\sni.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win7-x86\native\sni.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\unix\lib\netstandard1.3\System.Data.SqlClient.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win\lib\netstandard1.3\System.Data.SqlClient.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\PerfusionParametersView.g.cs
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\PerfusionParametersView.baml
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OxyPlot.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OxyPlot.Wpf.dll
+C:\D2025\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OxyPlot.Wpf.Shared.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.exe
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.deps.json
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.runtimeconfig.json
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\PerfusionAnalyzer.pdb
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\csharls.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\CSJ2K.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\Dicom.Core.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Audio.OpenAL.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Compute.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Core.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\GLWpfControl.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Graphics.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Input.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Mathematics.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Windowing.Common.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Windowing.Desktop.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OpenTK.Windowing.GraphicsLibraryFramework.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OxyPlot.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OxyPlot.Wpf.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\OxyPlot.Wpf.Shared.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\BitMiracle.LibJpeg.NetCore.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\linux-x64\native\libglfw.so.3
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\osx-arm64\native\libglfw.3.dylib
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\osx-x64\native\libglfw.3.dylib
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win-x64\native\glfw3.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win-x86\native\glfw3.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win7-x64\native\sni.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win7-x86\native\sni.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\unix\lib\netstandard1.3\System.Data.SqlClient.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\runtimes\win\lib\netstandard1.3\System.Data.SqlClient.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.csproj.AssemblyReference.cache
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\PerfusionParametersView.baml
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\FramesView.g.cs
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\MainWindow.g.cs
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\PerfusionParametersView.g.cs
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\App.g.cs
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\GeneratedInternalTypeHelper.g.cs
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer_MarkupCompile.cache
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer_MarkupCompile.lref
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\FramesView.baml
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Views\MainWindow.baml
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.g.resources
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.GeneratedMSBuildEditorConfig.editorconfig
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.AssemblyInfoInputs.cache
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.AssemblyInfo.cs
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.csproj.CoreCompileInputs.cache
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\Perfusio.C890405E.Up2Date
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\refint\PerfusionAnalyzer.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.pdb
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.genruntimeconfig.cache
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\ref\PerfusionAnalyzer.dll
