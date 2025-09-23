@@ -6,7 +6,7 @@
              xmlns:wfi="clr-namespace:System.Windows.Forms.Integration;assembly=WindowsFormsIntegration"
              xmlns:glWpfControl="clr-namespace:OpenTK.Wpf;assembly=GLWpfControl">
 
-    <Grid Margin="10">
+    <Grid Margin="10" PreviewMouseWheel="UserControl_OnPreviewMouseWheel">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="*"/>

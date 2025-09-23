@@ -104,3 +104,5 @@ C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer
 C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.pdb
 C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.genruntimeconfig.cache
 C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\ref\PerfusionAnalyzer.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\bin\Debug\net8.0-windows\MathNet.Numerics.dll
+C:\dima\Диплом Магістр ФБМІ\PerfusionAnalyzer\PerfusionAnalyzer\obj\Debug\net8.0-windows\PerfusionAnalyzer.sourcelink.json

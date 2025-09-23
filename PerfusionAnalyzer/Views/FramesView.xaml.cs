@@ -1,6 +1,7 @@
 ﻿using OpenTK.Wpf;
 using PerfusionAnalyzer.Services;
 using PerfusionAnalyzer.ViewModels;
+using System.Windows.Input;
 
 namespace PerfusionAnalyzer.Views;
 
@@ -33,6 +34,17 @@ public partial class FramesView : System.Windows.Controls.UserControl
                 _renderer.LoadFrameTexture(_viewModel.CurrentDicomFrame);
             }
         };
+    }
+
+    private void UserControl_OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
+    {
+        int delta = e.Delta > 0 ? -1 : 1;
+        int newIndex = _viewModel.CurrentFrameIndex - delta;
+
+        newIndex = System.Math.Max(0, System.Math.Min(_viewModel.MaxFrameIndex, newIndex));
+        _viewModel.CurrentFrameIndex = newIndex;
+
+        e.Handled = true;
     }
 
     private void OpenTkControl_OnRender(TimeSpan delta)

@@ -46,10 +46,6 @@
         "net8.0-windows7.0": {
           "targetAlias": "net8.0-windows",
           "dependencies": {
-            "MathNet.Numerics": {
-              "target": "Package",
-              "version": "[5.0.0, )"
-            },
             "OpenTK": {
               "target": "Package",
               "version": "[4.9.4, )"

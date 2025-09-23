@@ -166,20 +166,33 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
     public async Task CalculateAllAsync()
     {
-        var results = await Task.Run(CalculatePerfusion);
-
-        ErrorMessage = results.ErrorMessage;
-        AUCResult = results.AUCResult;
-        MTTResult = results.MTTResult;
-        TTPResult = results.TTPResult;
-        _aucMap = results.AucMap;
-        _mttMap = results.MttMap;
-        _ttpMap = results.TtpMap;
-
-        if (results.ErrorMessage == "")
+        try
         {
-            BuildPlot(results.TimePoints, results.FilteredCurve);
+            var frames = DicomStorage.Instance.Images;
+            var ushortFrames = FramesToUshort(frames);
+
+            double[] timePoints = frames
+                .Select(img => img.Dataset.GetSingleValueOrDefault(DicomTag.TriggerTime, -1.0) / 1000.0)
+                .ToArray();
+
+            var perfusionResults = await Task.Run(() => CalculatePerfusion(frames, ushortFrames, timePoints));
+            var perfusionMapResults = await Task.Run(() => CalculatePerfusionMaps(frames, ushortFrames, timePoints));
+
+            AUCResult = perfusionResults.AUCResult;
+            MTTResult = perfusionResults.MTTResult;
+            TTPResult = perfusionResults.TTPResult;
+
+            AucMap = perfusionMapResults.AucMap;
+            MttMap = perfusionMapResults.MttMap;
+            TtpMap = perfusionMapResults.TtpMap;
+
+            BuildPlot(perfusionResults.TimePoints, perfusionResults.ConcentrationPoints);
+
             DescriptorChanged?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = ex.Message;
         }
     }
 
@@ -187,7 +200,7 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
     {
         try
         {
-            float[,] mapToExport = SelectedDescriptor switch
+            float[,]? mapToExport = SelectedDescriptor switch
             {
                 DescriptorType.AUC => _aucMap,
                 DescriptorType.MTT => _mttMap,
@@ -218,86 +231,109 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
-    private PerfusionResults CalculatePerfusion()
+    private PerfusionResults CalculatePerfusion(List<DicomImage> frames, ushort[][] ushortFrames, double[] timePoints)
     {
         var results = new PerfusionResults();
 
-        try
+        int height = frames[0].Height;
+        int width = frames[0].Width;
+
+        double[] intensityCurve = new double[frames.Count];
+        for (int f = 0; f < frames.Count; f++)
         {
-            results.ErrorMessage = "";
-
-            var frames = DicomStorage.Instance.Images;
-
-            results.TimePoints = frames
-                .Select(img => img.Dataset.GetSingleValueOrDefault(DicomTag.TriggerTime, -1.0) / 1000.0)
-                .ToArray();
-
-            int height = frames[0].Height;
-            int width = frames[0].Width;
-
-            ushort[][] allFrames = new ushort[frames.Count][];
-
-            for (int f = 0; f < frames.Count; f++)
-            {
-                var pixelData = DicomPixelData.Create(frames[f].Dataset);
-                byte[] rawBytes = pixelData.GetFrame(0).Data;
-
-                int numPixels = width * height;
-                ushort[] pixels = new ushort[numPixels];
-
-                for (int i = 0; i < numPixels; i++)
-                {
-                    pixels[i] = BitConverter.ToUInt16(rawBytes, i * 2);
-                }
-
-                allFrames[f] = pixels;
-            }
-
-            double[] concentrationCurve = new double[frames.Count];
-            for (int f = 0; f < frames.Count; f++)
-            {
-                concentrationCurve[f] = allFrames[f].Average(p => (double)p);
-            }
-
-            results.FilteredCurve = SignalFilter.ApplyGaussianFilter(concentrationCurve, radius: 2, sigma: 1.0);
-
-            results.AUCResult = PerfusionCalculator.CalculateAUC(results.TimePoints, results.FilteredCurve).ToString("F2");
-            results.MTTResult = PerfusionCalculator.CalculateMTT(results.TimePoints, results.FilteredCurve).ToString("F2");
-            results.TTPResult = PerfusionCalculator.CalculateTTP(results.TimePoints, results.FilteredCurve).ToString("F2");
-
-            results.AucMap = new float[height, width];
-            results.MttMap = new float[height, width];
-            results.TtpMap = new float[height, width];
-
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    double[] pixelCurve = new double[frames.Count];
-
-                    for (int f = 0; f < frames.Count; f++)
-                    {
-                        ushort pixelValue = allFrames[f][y * width + x];
-                        pixelCurve[f] = pixelValue;
-                    }
-
-                    double[] filtered = SignalFilter.ApplyGaussianFilter(pixelCurve, radius: 2, sigma: 1.0);
-
-                    results.AucMap[y, x] = (float)PerfusionCalculator.CalculateAUC(results.TimePoints, filtered);
-                    results.MttMap[y, x] = (float)PerfusionCalculator.CalculateMTT(results.TimePoints, filtered);
-                    results.TtpMap[y, x] = (float)PerfusionCalculator.CalculateTTP(results.TimePoints, filtered);
-                }
-            }
+            intensityCurve[f] = ushortFrames[f].Average(p => (double)p);
         }
-        catch (Exception ex)
+
+        int baselineCount = System.Math.Min(3, intensityCurve.Length);
+        double S0 = intensityCurve.Take(baselineCount).Average();
+
+        double TE = frames[0].Dataset.GetSingleValueOrDefault(DicomTag.EchoTime, 30.0);
+        double TE_seconds = TE / 1000.0;
+
+        double[] concentrationCurve = new double[frames.Count];
+        for (int f = 0; f < frames.Count; f++)
         {
-            results.ErrorMessage = ex.Message;
+            concentrationCurve[f] = -1.0 / TE_seconds * System.Math.Log(intensityCurve[f] / S0);
+        }
+
+        double[] filteredCurve = SignalFilter.ApplyGaussianFilter(concentrationCurve);
+
+        var spline = SplineInterpolator.GetSpline(timePoints, filteredCurve);
+
+        var denseTimePoints = GenerateDenseTimePoints(timePoints, 15);
+        var interpolatedCurve = SplineInterpolator.InterpolateCurve(spline, denseTimePoints);
+
+        results.AUCResult = PerfusionCalculator.CalculateAUC(denseTimePoints, interpolatedCurve).ToString("F2");
+        results.MTTResult = PerfusionCalculator.CalculateMTT(denseTimePoints, interpolatedCurve).ToString("F2");
+        results.TTPResult = PerfusionCalculator.CalculateTTP(denseTimePoints, interpolatedCurve).ToString("F2");
+
+        results.TimePoints = denseTimePoints;
+        results.ConcentrationPoints = interpolatedCurve;
+
+        return results;
+    }
+
+    private PerfusionMapResults CalculatePerfusionMaps(List<DicomImage> frames, ushort[][] ushortFrames, double[] timePoints)
+    {
+        var results = new PerfusionMapResults();
+
+        int height = frames[0].Height;
+        int width = frames[0].Width;
+
+        int baselineCount = System.Math.Min(3, frames.Count);
+
+        double TE = frames[0].Dataset.GetSingleValueOrDefault(DicomTag.EchoTime, 30.0);
+        double TE_seconds = TE / 1000.0;
+
+        var denseTimePoints = GenerateDenseTimePoints(timePoints, 15);
+
+        results.AucMap = new float[height, width];
+        results.MttMap = new float[height, width];
+        results.TtpMap = new float[height, width];
+
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                double[] pixelCurve = new double[frames.Count];
+
+                for (int f = 0; f < frames.Count; f++)
+                {
+                    ushort pixelValue = ushortFrames[f][y * width + x];
+                    pixelCurve[f] = pixelValue;
+                }
+
+                double pixelS0 = pixelCurve.Take(baselineCount).Average();
+
+                double[] mapConcentrationCurve = new double[frames.Count];
+                for (int f = 0; f < frames.Count; f++)
+                {
+                    if (pixelCurve[f] <= 0 || pixelS0 <= 0)
+                    {
+                        mapConcentrationCurve[f] = 0;
+                    }
+                    else
+                    {
+                        mapConcentrationCurve[f] = -1.0 / TE_seconds * System.Math.Log(pixelCurve[f] / pixelS0);
+                    }
+                }
+
+                double[] filteredMapCurve = SignalFilter.ApplyGaussianFilter(mapConcentrationCurve);
+
+                var mapSpline = SplineInterpolator.GetSpline(timePoints, filteredMapCurve);
+
+                double[] interpolatedMapCurve = SplineInterpolator.InterpolateCurve(mapSpline, denseTimePoints);
+
+                results.AucMap[y, x] = (float)PerfusionCalculator.CalculateAUC(denseTimePoints, interpolatedMapCurve);
+                results.MttMap[y, x] = System.Math.Clamp((float)PerfusionCalculator.CalculateMTT(denseTimePoints, interpolatedMapCurve), 0, 70);
+                results.TtpMap[y, x] = (float)PerfusionCalculator.CalculateTTP(denseTimePoints, interpolatedMapCurve);
+            }
         }
 
         return results;
     }
 
-    private void BuildPlot(double[] timePoints, double[] curvePoints)
+    private void BuildPlot(double[] timePoints, double[] concentrationPoints)
     {
         var plotModel = new PlotModel { Title = "Час – Концентрація" };
 
@@ -316,20 +352,58 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
         var series = new LineSeries
         {
-            MarkerType = MarkerType.Circle,
-            MarkerSize = 1,
-            MarkerStroke = OxyColors.DarkBlue,
             Color = OxyColors.SkyBlue
         };
 
         for (int i = 0; i < timePoints.Length; i++)
         {
-            series.Points.Add(new DataPoint(timePoints[i], curvePoints[i]));
+            series.Points.Add(new DataPoint(timePoints[i], concentrationPoints[i]));
         }
 
         plotModel.Series.Add(series);
 
         PerfusionPlotModel = plotModel;
+    }
+
+    private ushort[][] FramesToUshort(List<DicomImage> frames)
+    {
+        int width = frames[0].Width;
+        int height = frames[0].Height;
+
+        ushort[][] allFrames = new ushort[frames.Count][];
+        for (int f = 0; f < frames.Count; f++)
+        {
+            var pixelData = DicomPixelData.Create(frames[f].Dataset);
+            byte[] rawBytes = pixelData.GetFrame(0).Data;
+
+            int numPixels = width * height;
+            ushort[] pixels = new ushort[numPixels];
+
+            for (int i = 0; i < numPixels; i++)
+                pixels[i] = BitConverter.ToUInt16(rawBytes, i * 2);
+
+            allFrames[f] = pixels;
+        }
+        return allFrames;
+    }
+
+    public static double[] GenerateDenseTimePoints(double[] timePoints, int stepsPerInterval)
+    {
+        double min = timePoints.First();
+        double max = timePoints.Last();
+
+        double originalStep = (max - min) / (timePoints.Length - 1);
+        double interpStep = originalStep / stepsPerInterval;
+
+        int count = (int)System.Math.Round((max - min) / interpStep) + 1;
+
+        double[] dense = new double[count];
+        for (int i = 0; i < count; i++)
+        {
+            dense[i] = min + i * interpStep;
+        }
+
+        return dense;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

@@ -63,7 +63,7 @@ namespace PerfusionAnalyzer.Views {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/PerfusionAnalyzer;V1.0.0.0;component/views/perfusionparametersview.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/PerfusionAnalyzer;component/views/perfusionparametersview.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\..\Views\PerfusionParametersView.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);
