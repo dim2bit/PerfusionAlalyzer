@@ -13,7 +13,7 @@
         </Grid.ColumnDefinitions>
 
         <StackPanel Orientation="Vertical" Grid.Column="0" HorizontalAlignment="Left" Width="350">
-            <Button Content="Вибрати файли DICOM" Width="200" Height="30" Margin="0,0,0,10" Command="{Binding LoadDicomFileCommand}"/>
+            <Button Content="Вибрати файли DICOM" Width="200" Height="30" Margin="0,0,0,10" Command="{Binding LoadDicomFilesCommand}"/>
             <TextBlock Text="{Binding StatusMessage}" FontWeight="Bold" TextWrapping="Wrap"/>
         </StackPanel>
 

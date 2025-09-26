@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PerfusionAnalyzer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d8bbfca725184fa0112266b12c7339cc99ba10df")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+57b21c03df08d6936619b6a433c0e9f4d1cd0f31")]
 [assembly: System.Reflection.AssemblyProductAttribute("PerfusionAnalyzer")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PerfusionAnalyzer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

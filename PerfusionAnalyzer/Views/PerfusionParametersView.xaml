@@ -17,52 +17,61 @@
 
         <Grid Grid.Column="0">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Vertical" Grid.Row="0" HorizontalAlignment="Left" Width="350">
-                <TextBlock Text="Розрахунок перфузійних параметрів" FontSize="16" FontWeight="Bold" Margin="0,0,0,15" />
+            <StackPanel Orientation="Vertical" Grid.Row="0" Margin="0,0,20,30" MaxHeight="180" IsEnabled="{Binding IsDataLoaded}">
+                <CheckBox Content="Постобробка"
+                    IsChecked="{Binding IsPostProcessingEnabled, Mode=TwoWay}"
+                    FontSize="13"
+                    Margin="0,0,0,10"/>
 
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
-                        <ColumnDefinition Width="100"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="AUC:" VerticalAlignment="Center" Grid.Column="0"/>
-                    <TextBox Text="{Binding AUCResult}" IsReadOnly="True" Height="25" Width="90" Grid.Column="1" HorizontalContentAlignment="Right" />
-                </Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
+                    <TextBlock Text="Поріг маски:" Width="80" VerticalAlignment="Center" FontSize="13"/>
+                    <Slider Minimum="0" Maximum="255" Value="{Binding Threshold, Mode=TwoWay}" IsEnabled="{Binding IsPostProcessingEnabled}" Width="180" Height="20" />
+                    <TextBlock Text="{Binding Threshold}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
+                </StackPanel>
 
-                <Grid Margin="0,0,0,10">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
-                        <ColumnDefinition Width="100"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="MTT:" VerticalAlignment="Center" Grid.Column="0"/>
-                    <TextBox Text="{Binding MTTResult}" IsReadOnly="True" Height="25" Width="90" Grid.Column="1" HorizontalContentAlignment="Right" />
-                </Grid>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
+                    <TextBlock Text="Гама:" Width="80" VerticalAlignment="Center" FontSize="13"/>
+                    <Slider Minimum="0.1" Maximum="2.0" Value="{Binding Gamma, Mode=TwoWay}" IsEnabled="{Binding IsPostProcessingEnabled}" Width="180" Height="20"/>
+                    <TextBlock Text="{Binding Gamma, StringFormat=F2}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
+                </StackPanel>
 
-                <Grid Margin="0,0,0,20">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="100"/>
-                        <ColumnDefinition Width="100"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Text="TTP:" VerticalAlignment="Center" Grid.Column="0"/>
-                    <TextBox Text="{Binding TTPResult}" IsReadOnly="True" Height="25" Width="90" Grid.Column="1" HorizontalContentAlignment="Right" />
-                </Grid>
-
-                <TextBlock Text="{Binding ErrorMessage}" Foreground="Red" FontWeight="Bold" TextWrapping="Wrap" Margin="0,10,0,0"/>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Розмір ядра:" Width="80" VerticalAlignment="Center" FontSize="13"/>
+                    <Slider Minimum="1" Maximum="11" TickFrequency="2" IsSnapToTickEnabled="True" 
+                        Value="{Binding KernelSize, Mode=TwoWay}" IsEnabled="{Binding IsPostProcessingEnabled}" Width="180" Height="20"/>
+                    <TextBlock Text="{Binding KernelSize}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
+                </StackPanel>
             </StackPanel>
 
-            <oxy:PlotView 
-                Grid.Row="1"
-                Model="{Binding PerfusionPlotModel}"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Stretch"
-                Margin="0,10,0,0"/>
+            <StackPanel Grid.Row="1">
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                    <StackPanel Orientation="Horizontal" Margin="10,0">
+                        <TextBlock Text="AUC:" FontWeight="Bold" Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding AUCResult}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="20,0">
+                        <TextBlock Text="MTT:" FontWeight="Bold" Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding MTTResult}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="20,0">
+                        <TextBlock Text="TTP:" FontWeight="Bold" Margin="0,0,5,0"/>
+                        <TextBlock Text="{Binding TTPResult}"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <oxy:PlotView 
+                    Model="{Binding PerfusionPlotModel}"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
+                    Height="250" />
+            </StackPanel>
         </Grid>
 
-        <Grid Grid.Column="1">
+        <Grid Grid.Column="1" IsEnabled="{Binding IsDataLoaded}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />

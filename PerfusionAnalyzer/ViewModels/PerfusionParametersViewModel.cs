@@ -1,33 +1,25 @@
-﻿using Dicom;
-using Dicom.Imaging;
-using OxyPlot;
+﻿using OxyPlot;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using PerfusionAnalyzer.Math;
+using PerfusionAnalyzer.Core.Services;
 using PerfusionAnalyzer.Models;
-using PerfusionAnalyzer.Services;
-using PerfusionAnalyzer.Utils;
+using PerfusionAnalyzer.Commands;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.IO;
+using System.Windows;
 using System.Windows.Input;
+using PerfusionAnalyzer.Core.Utils;
+using System.IO;
 
 namespace PerfusionAnalyzer.ViewModels;
 
 public class PerfusionParametersViewModel : INotifyPropertyChanged
 {
-    private DescriptorType _selectedDescriptor;
-    private string _errorMessage = "";
+    private readonly ProcessingSettings _processingSettings = new();
 
-    private string _aucResult = "";
-    private string _mttResult = "";
-    private string _ttpResult = "";
+    private PerfusionMaps _originalMaps;
 
-    private float[,] _aucMap;
-    private float[,] _mttMap;
-    private float[,] _ttpMap;
-
-    public event EventHandler? DescriptorChanged;
+    private PerfusionService _perfusionService;
 
     public ObservableCollection<DescriptorType> AvailableDescriptors { get; } =
         new ObservableCollection<DescriptorType> { DescriptorType.AUC, DescriptorType.MTT, DescriptorType.TTP };
@@ -46,6 +38,7 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
+    private DescriptorType _selectedDescriptor;
     public DescriptorType SelectedDescriptor
     {
         get => _selectedDescriptor;
@@ -55,11 +48,11 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             {
                 _selectedDescriptor = value;
                 OnPropertyChanged(nameof(SelectedDescriptor));
-                DescriptorChanged?.Invoke(this, EventArgs.Empty);
             }
         }
     }
 
+    private string _aucResult = "";
     public string AUCResult
     {
         get => _aucResult;
@@ -73,6 +66,7 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
+    private string _mttResult = "";
     public string MTTResult
     {
         get => _mttResult;
@@ -86,6 +80,7 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
+    private string _ttpResult = "";
     public string TTPResult
     {
         get => _ttpResult;
@@ -99,7 +94,8 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
-    public float[,] AucMap
+    private float[,] _aucMap;
+    public float[,] AUCMap
     {
         get => _aucMap;
         set
@@ -107,12 +103,13 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             if (_aucMap != value)
             {
                 _aucMap = value;
-                OnPropertyChanged(nameof(AucMap));
+                OnPropertyChanged(nameof(AUCMap));
             }
         }
     }
 
-    public float[,] MttMap
+    private float[,] _mttMap;
+    public float[,] MTTMap
     {
         get => _mttMap;
         set
@@ -120,12 +117,13 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             if (_mttMap != value)
             {
                 _mttMap = value;
-                OnPropertyChanged(nameof(MttMap));
+                OnPropertyChanged(nameof(MTTMap));
             }
         }
     }
 
-    public float[,] TtpMap
+    private float[,] _ttpMap;
+    public float[,] TTPMap
     {
         get => _ttpMap;
         set
@@ -133,11 +131,78 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             if (_ttpMap != value)
             {
                 _ttpMap = value;
-                OnPropertyChanged(nameof(TtpMap));
+                OnPropertyChanged(nameof(TTPMap));
             }
         }
     }
 
+    public double Gamma
+    {
+        get => _processingSettings.Gamma;
+        set
+        {
+            if (_processingSettings.Gamma != value)
+            {
+                _processingSettings.Gamma = value;
+                OnPropertyChanged(nameof(Gamma));
+            }
+        }
+    }
+
+    public int KernelSize
+    {
+        get => _processingSettings.KernelSize;
+        set
+        {
+            if (_processingSettings.KernelSize != value)
+            {
+                _processingSettings.KernelSize = value;
+                OnPropertyChanged(nameof(KernelSize));
+            }
+        }
+    }
+
+    public ushort Threshold
+    {
+        get => _processingSettings.Threshold;
+        set
+        {
+            if (_processingSettings.Threshold != value)
+            {
+                _processingSettings.Threshold = value;
+                OnPropertyChanged(nameof(Threshold));
+            }
+        }
+    }
+
+    public bool IsPostProcessingEnabled
+    {
+        get => _processingSettings.IsPostProcessingEnabled;
+        set
+        {
+            if (_processingSettings.IsPostProcessingEnabled != value)
+            {
+                _processingSettings.IsPostProcessingEnabled = value;
+                OnPropertyChanged(nameof(IsPostProcessingEnabled));
+            }
+        }
+    }
+
+    private bool _isDataLoaded = false;
+    public bool IsDataLoaded
+    {
+        get => _isDataLoaded;
+        set
+        {
+            if (_isDataLoaded != value)
+            {
+                _isDataLoaded = value;
+                OnPropertyChanged(nameof(IsDataLoaded));
+            }
+        }
+    }
+
+    private string _errorMessage = "";
     public string ErrorMessage
     {
         get => _errorMessage;
@@ -157,9 +222,9 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
     {
         ExportMapCommand = new RelayCommand(_ => ExportCurrentMapToPng(), _ =>
         {
-            if (SelectedDescriptor == DescriptorType.AUC && _aucMap == null) return false;
-            if (SelectedDescriptor == DescriptorType.MTT && _mttMap == null) return false;
-            if (SelectedDescriptor == DescriptorType.TTP && _ttpMap == null) return false;
+            if (SelectedDescriptor == DescriptorType.AUC && AUCMap == null) return false;
+            if (SelectedDescriptor == DescriptorType.MTT && MTTMap == null) return false;
+            if (SelectedDescriptor == DescriptorType.TTP && TTPMap == null) return false;
             return true;
         });
     }
@@ -169,30 +234,70 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         try
         {
             var frames = DicomStorage.Instance.Images;
-            var ushortFrames = FramesToUshort(frames);
+            _perfusionService = new PerfusionService(frames);
 
-            double[] timePoints = frames
-                .Select(img => img.Dataset.GetSingleValueOrDefault(DicomTag.TriggerTime, -1.0) / 1000.0)
-                .ToArray();
+            var perfusionMetrics = await _perfusionService.CalculateMetricsAsync();
+            var perfusionMaps = await _perfusionService.CalculateMapsAsync();
 
-            var perfusionResults = await Task.Run(() => CalculatePerfusion(frames, ushortFrames, timePoints));
-            var perfusionMapResults = await Task.Run(() => CalculatePerfusionMaps(frames, ushortFrames, timePoints));
+            AUCResult = perfusionMetrics.AUCResult;
+            MTTResult = perfusionMetrics.MTTResult;
+            TTPResult = perfusionMetrics.TTPResult;
 
-            AUCResult = perfusionResults.AUCResult;
-            MTTResult = perfusionResults.MTTResult;
-            TTPResult = perfusionResults.TTPResult;
+            AUCMap = perfusionMaps.AUCMap;
+            MTTMap = perfusionMaps.MTTMap;
+            TTPMap = perfusionMaps.TTPMap;
 
-            AucMap = perfusionMapResults.AucMap;
-            MttMap = perfusionMapResults.MttMap;
-            TtpMap = perfusionMapResults.TtpMap;
+            _originalMaps = new PerfusionMaps
+            {
+                AUCMap = (float[,])AUCMap.Clone(),
+                MTTMap = (float[,])MTTMap.Clone(),
+                TTPMap = (float[,])TTPMap.Clone()
+            };
 
-            BuildPlot(perfusionResults.TimePoints, perfusionResults.ConcentrationPoints);
+            await ReprocessMapsAsync();
 
-            DescriptorChanged?.Invoke(this, EventArgs.Empty);
+            BuildPlot(perfusionMetrics.TimePoints, perfusionMetrics.ConcentrationPoints);
+
+            IsDataLoaded = true;
+
+            OnPropertyChanged(nameof(SelectedDescriptor));
+        }
+        catch (InvalidOperationException ex)
+        {
+            System.Windows.MessageBox.Show($"{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            System.Windows.MessageBox.Show(
+                $"Помилка при розрахунку перфузійних параметрів:\n{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    public async Task ReprocessMapsAsync()
+    {
+        try
+        {
+            if (!IsPostProcessingEnabled)
+            {
+                AUCMap = _originalMaps.AUCMap;
+                MTTMap = _originalMaps.MTTMap;
+                TTPMap = _originalMaps.TTPMap;
+                return;
+            }
+
+            if (_perfusionService != null)
+            {
+                var perfusionMapsPostProcessed = await _perfusionService.PostProcessMapsAsync(FilterType.Median, _originalMaps, Threshold, KernelSize, Gamma);
+
+                AUCMap = perfusionMapsPostProcessed.AUCMap;
+                MTTMap = perfusionMapsPostProcessed.MTTMap;
+                TTPMap = perfusionMapsPostProcessed.TTPMap;
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                $"Помилка при постобробці карт:\n{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -202,141 +307,45 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         {
             float[,]? mapToExport = SelectedDescriptor switch
             {
-                DescriptorType.AUC => _aucMap,
-                DescriptorType.MTT => _mttMap,
-                DescriptorType.TTP => _ttpMap,
+                DescriptorType.AUC => AUCMap,
+                DescriptorType.MTT => MTTMap,
+                DescriptorType.TTP => TTPMap,
                 _ => null
             };
 
-            using var dialog = new FolderBrowserDialog
+            if (mapToExport != null)
             {
-                Description = "Виберіть папку для збереження карти",
-                UseDescriptionForTitle = true,
-                ShowNewFolderButton = true
-            };
+                using var dialog = new SaveFileDialog
+                {
+                    Title = "Збереження карти перфузії",
+                    Filter = "PNG Image (*.png)|*.png|JPEG Image (*.jpg)|*.jpg|Bitmap Image (*.bmp)|*.bmp",
+                    FileName = $"perfusion_{SelectedDescriptor.ToString().ToLower()}",
+                    DefaultExt = "png",
+                    AddExtension = true
+                };
 
-            DialogResult result = dialog.ShowDialog();
-
-            if (result == DialogResult.OK && !string.IsNullOrWhiteSpace(dialog.SelectedPath))
-            {
-                string fileName = $"perfusion_{SelectedDescriptor.ToString().ToLower()}.png";
-                string fullPath = Path.Combine(dialog.SelectedPath, fileName);
-
-                Services.ImageManager.SaveMapAsPng(mapToExport, fullPath, SelectedDescriptor);
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    var format = Path.GetExtension(dialog.FileName)?.ToLower() switch
+                    {
+                        ".jpg" or ".jpeg" => System.Drawing.Imaging.ImageFormat.Jpeg,
+                        ".bmp" => System.Drawing.Imaging.ImageFormat.Bmp,
+                        _ => System.Drawing.Imaging.ImageFormat.Png
+                    };
+                    ImageUtils.SaveMapAsImage(SelectedDescriptor, mapToExport, dialog.FileName, format);
+                }
             }
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Помилка експорту: " + ex.Message;
+            System.Windows.MessageBox.Show(
+                $"Помилка при експорті карти:\n{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
-    }
-
-    private PerfusionResults CalculatePerfusion(List<DicomImage> frames, ushort[][] ushortFrames, double[] timePoints)
-    {
-        var results = new PerfusionResults();
-
-        int height = frames[0].Height;
-        int width = frames[0].Width;
-
-        double[] intensityCurve = new double[frames.Count];
-        for (int f = 0; f < frames.Count; f++)
-        {
-            intensityCurve[f] = ushortFrames[f].Average(p => (double)p);
-        }
-
-        int baselineCount = System.Math.Min(3, intensityCurve.Length);
-        double S0 = intensityCurve.Take(baselineCount).Average();
-
-        double TE = frames[0].Dataset.GetSingleValueOrDefault(DicomTag.EchoTime, 30.0);
-        double TE_seconds = TE / 1000.0;
-
-        double[] concentrationCurve = new double[frames.Count];
-        for (int f = 0; f < frames.Count; f++)
-        {
-            concentrationCurve[f] = -1.0 / TE_seconds * System.Math.Log(intensityCurve[f] / S0);
-        }
-
-        double[] filteredCurve = SignalFilter.ApplyGaussianFilter(concentrationCurve);
-
-        var spline = SplineInterpolator.GetSpline(timePoints, filteredCurve);
-
-        var denseTimePoints = GenerateDenseTimePoints(timePoints, 15);
-        var interpolatedCurve = SplineInterpolator.InterpolateCurve(spline, denseTimePoints);
-
-        results.AUCResult = PerfusionCalculator.CalculateAUC(denseTimePoints, interpolatedCurve).ToString("F2");
-        results.MTTResult = PerfusionCalculator.CalculateMTT(denseTimePoints, interpolatedCurve).ToString("F2");
-        results.TTPResult = PerfusionCalculator.CalculateTTP(denseTimePoints, interpolatedCurve).ToString("F2");
-
-        results.TimePoints = denseTimePoints;
-        results.ConcentrationPoints = interpolatedCurve;
-
-        return results;
-    }
-
-    private PerfusionMapResults CalculatePerfusionMaps(List<DicomImage> frames, ushort[][] ushortFrames, double[] timePoints)
-    {
-        var results = new PerfusionMapResults();
-
-        int height = frames[0].Height;
-        int width = frames[0].Width;
-
-        int baselineCount = System.Math.Min(3, frames.Count);
-
-        double TE = frames[0].Dataset.GetSingleValueOrDefault(DicomTag.EchoTime, 30.0);
-        double TE_seconds = TE / 1000.0;
-
-        var denseTimePoints = GenerateDenseTimePoints(timePoints, 15);
-
-        results.AucMap = new float[height, width];
-        results.MttMap = new float[height, width];
-        results.TtpMap = new float[height, width];
-
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                double[] pixelCurve = new double[frames.Count];
-
-                for (int f = 0; f < frames.Count; f++)
-                {
-                    ushort pixelValue = ushortFrames[f][y * width + x];
-                    pixelCurve[f] = pixelValue;
-                }
-
-                double pixelS0 = pixelCurve.Take(baselineCount).Average();
-
-                double[] mapConcentrationCurve = new double[frames.Count];
-                for (int f = 0; f < frames.Count; f++)
-                {
-                    if (pixelCurve[f] <= 0 || pixelS0 <= 0)
-                    {
-                        mapConcentrationCurve[f] = 0;
-                    }
-                    else
-                    {
-                        mapConcentrationCurve[f] = -1.0 / TE_seconds * System.Math.Log(pixelCurve[f] / pixelS0);
-                    }
-                }
-
-                double[] filteredMapCurve = SignalFilter.ApplyGaussianFilter(mapConcentrationCurve);
-
-                var mapSpline = SplineInterpolator.GetSpline(timePoints, filteredMapCurve);
-
-                double[] interpolatedMapCurve = SplineInterpolator.InterpolateCurve(mapSpline, denseTimePoints);
-
-                results.AucMap[y, x] = (float)PerfusionCalculator.CalculateAUC(denseTimePoints, interpolatedMapCurve);
-                results.MttMap[y, x] = System.Math.Clamp((float)PerfusionCalculator.CalculateMTT(denseTimePoints, interpolatedMapCurve), 0, 70);
-                results.TtpMap[y, x] = (float)PerfusionCalculator.CalculateTTP(denseTimePoints, interpolatedMapCurve);
-            }
-        }
-
-        return results;
     }
 
     private void BuildPlot(double[] timePoints, double[] concentrationPoints)
     {
         var plotModel = new PlotModel { Title = "Час – Концентрація" };
-
 
         plotModel.Axes.Add(new LinearAxis
         {
@@ -363,47 +372,6 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         plotModel.Series.Add(series);
 
         PerfusionPlotModel = plotModel;
-    }
-
-    private ushort[][] FramesToUshort(List<DicomImage> frames)
-    {
-        int width = frames[0].Width;
-        int height = frames[0].Height;
-
-        ushort[][] allFrames = new ushort[frames.Count][];
-        for (int f = 0; f < frames.Count; f++)
-        {
-            var pixelData = DicomPixelData.Create(frames[f].Dataset);
-            byte[] rawBytes = pixelData.GetFrame(0).Data;
-
-            int numPixels = width * height;
-            ushort[] pixels = new ushort[numPixels];
-
-            for (int i = 0; i < numPixels; i++)
-                pixels[i] = BitConverter.ToUInt16(rawBytes, i * 2);
-
-            allFrames[f] = pixels;
-        }
-        return allFrames;
-    }
-
-    public static double[] GenerateDenseTimePoints(double[] timePoints, int stepsPerInterval)
-    {
-        double min = timePoints.First();
-        double max = timePoints.Last();
-
-        double originalStep = (max - min) / (timePoints.Length - 1);
-        double interpStep = originalStep / stepsPerInterval;
-
-        int count = (int)System.Math.Round((max - min) / interpStep) + 1;
-
-        double[] dense = new double[count];
-        for (int i = 0; i < count; i++)
-        {
-            dense[i] = min + i * interpStep;
-        }
-
-        return dense;
     }
 
     public event PropertyChangedEventHandler? PropertyChanged;

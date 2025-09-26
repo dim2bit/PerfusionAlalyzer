@@ -1,6 +1,6 @@
 ﻿using OpenTK.Wpf;
+using PerfusionAnalyzer.Core.Services;
 using PerfusionAnalyzer.Models;
-using PerfusionAnalyzer.Services;
 using PerfusionAnalyzer.ViewModels;
 
 namespace PerfusionAnalyzer.Views;
@@ -29,9 +29,20 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
         };
         OpenTkControl.Start(settings);
 
-        _viewModel.DescriptorChanged += (_, __) =>
+        _viewModel.PropertyChanged += async (_, e) =>
         {
-            _needUpdateTexture = true;
+            if (e.PropertyName == nameof(_viewModel.SelectedDescriptor))
+            {
+                _needUpdateTexture = true;
+            }
+            else if (e.PropertyName == nameof(_viewModel.IsPostProcessingEnabled) ||
+                e.PropertyName == nameof(_viewModel.Gamma) ||
+                e.PropertyName == nameof(_viewModel.Threshold) ||
+                e.PropertyName == nameof(_viewModel.KernelSize))
+            {
+                _needUpdateTexture = true;
+                await _viewModel.ReprocessMapsAsync();
+            }
         };
 
         DicomStorage.Instance.ImagesUpdated += async (_, __) =>
@@ -61,16 +72,16 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
         switch (_viewModel.SelectedDescriptor)
         {
             case DescriptorType.AUC:
-                if (_viewModel.AucMap != null)
-                    _renderer.LoadMapTextureColored(_viewModel.AucMap, DescriptorType.AUC);
+                if (_viewModel.AUCMap != null)
+                    _renderer.LoadMapTextureColored(_viewModel.AUCMap, DescriptorType.AUC);
                 break;
             case DescriptorType.MTT:
-                if (_viewModel.MttMap != null)
-                    _renderer.LoadMapTextureColored(_viewModel.MttMap, DescriptorType.MTT);
+                if (_viewModel.MTTMap != null)
+                    _renderer.LoadMapTextureColored(_viewModel.MTTMap, DescriptorType.MTT);
                 break;
             case DescriptorType.TTP:
-                if (_viewModel.TtpMap != null)
-                    _renderer.LoadMapTextureColored(_viewModel.TtpMap, DescriptorType.TTP);
+                if (_viewModel.TTPMap != null)
+                    _renderer.LoadMapTextureColored(_viewModel.TTPMap, DescriptorType.TTP);
                 break;
         }
     }

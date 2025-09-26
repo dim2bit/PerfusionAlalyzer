@@ -1,10 +1,12 @@
 ﻿using Dicom;
 using Dicom.Imaging;
-using PerfusionAnalyzer.Services;
-using PerfusionAnalyzer.Utils;
+using PerfusionAnalyzer.Core.Services;
+using PerfusionAnalyzer.Commands;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Input;
+using PerfusionAnalyzer.Core.Dicom;
 
 namespace PerfusionAnalyzer.ViewModels;
 
@@ -14,11 +16,12 @@ public class FramesViewModel : INotifyPropertyChanged
     private int _currentIndex = 0;
     private ObservableCollection<DicomImage> _dicomFrames = new();
 
+    public event EventHandler? FilesLoaded;
     public event EventHandler? FrameChanged;
 
     public FramesViewModel()
     {
-        LoadDicomFileCommand = new RelayCommand(_ => LoadDicomFile());
+        LoadDicomFilesCommand = new RelayCommand(_ => LoadDicomFiles());
         NextFrameCommand = new RelayCommand(_ => NextFrame(), _ => _dicomFrames.Count > 1);
         PrevFrameCommand = new RelayCommand(_ => PrevFrame(), _ => _dicomFrames.Count > 1);
     }
@@ -66,19 +69,18 @@ public class FramesViewModel : INotifyPropertyChanged
         }
     }
 
-    public ICommand LoadDicomFileCommand { get; }
+    public ICommand LoadDicomFilesCommand { get; }
     public ICommand NextFrameCommand { get; }
     public ICommand PrevFrameCommand { get; }
 
-    private void LoadFrames(List<DicomImage> images)
+    public void LoadFrames()
     {
-        _dicomFrames = new ObservableCollection<DicomImage>();
+        var images = DicomStorage.Instance.Images;
 
-        for (int i = 0; i < images.Count; i++)
-        {
-            _dicomFrames.Add(images[i]);
-        }
+        if (images == null || images.Count == 0)
+            return;
 
+        _dicomFrames = new ObservableCollection<DicomImage>(images);
         _currentIndex = 0;
 
         OnPropertyChanged(nameof(CurrentDicomFrame));
@@ -86,39 +88,37 @@ public class FramesViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(CurrentFrameIndex));
         OnPropertyChanged(nameof(MaxFrameIndex));
         OnPropertyChanged(nameof(CurrentFrameTimeDisplay));
+
         FrameChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private void LoadDicomFile()
+    private void LoadDicomFiles()
     {
-        using (var dialog = new OpenFileDialog())
+        using var dialog = new OpenFileDialog
         {
-            dialog.Filter = "DICOM Files (*.dcm)|*.dcm";
-            dialog.Title = "Виберіть DICOM-файл";
-            dialog.Multiselect = true;
+            Filter = "DICOM Files (*.dcm)|*.dcm",
+            Title = "Виберіть DICOM-файл",
+            Multiselect = true
+        };
 
-            if (dialog.ShowDialog() == DialogResult.OK)
+        if (dialog.ShowDialog() == DialogResult.OK)
+        {
+            string[] fileNames = dialog.FileNames;
+
+            try
             {
-                string[] fileNames = dialog.FileNames;
+                var images = DicomUtils.LoadDicomImages(fileNames);
 
-                try
-                {
-                    var images = new List<DicomImage>();
-                    foreach (string filePath in fileNames)
-                    {
-                        images.Add(new DicomImage(filePath));
-                    }
+                StatusMessage = $"Завантажено файлів: {images.Count}";
 
-                    StatusMessage = $"Завантажено файлів: {images.Count}";
+                DicomStorage.Instance.SetImages(images);
 
-                    DicomStorage.Instance.SetImages(images);
-
-                    LoadFrames(DicomStorage.Instance.Images);
-                }
-                catch (Exception ex)
-                {
-                    StatusMessage = $"Помилка при завантаженні файлів:\n{ex.Message}";
-                }
+                FilesLoaded?.Invoke(this, EventArgs.Empty);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Помилка при завантаженні файлів:\n{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }
