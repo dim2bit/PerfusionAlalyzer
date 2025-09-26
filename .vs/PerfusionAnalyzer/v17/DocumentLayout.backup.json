@@ -3,8 +3,8 @@
   "WorkspaceRootPath": "C:\\dima\\\u0414\u0438\u043F\u043B\u043E\u043C \u041C\u0430\u0433\u0456\u0441\u0442\u0440 \u0424\u0411\u041C\u0406\\PerfusionAnalyzer\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{E0D5725C-F0E2-4132-9B7D-109491C8DCE1}|PerfusionAnalyzer\\PerfusionAnalyzer.csproj|c:\\dima\\\u0434\u0438\u043F\u043B\u043E\u043C \u043C\u0430\u0433\u0456\u0441\u0442\u0440 \u0444\u0431\u043C\u0456\\perfusionanalyzer\\perfusionanalyzer\\math\\splineinterpolator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{E0D5725C-F0E2-4132-9B7D-109491C8DCE1}|PerfusionAnalyzer\\PerfusionAnalyzer.csproj|solutionrelative:perfusionanalyzer\\math\\splineinterpolator.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{E0D5725C-F0E2-4132-9B7D-109491C8DCE1}|PerfusionAnalyzer\\PerfusionAnalyzer.csproj|c:\\dima\\\u0434\u0438\u043F\u043B\u043E\u043C \u043C\u0430\u0433\u0456\u0441\u0442\u0440 \u0444\u0431\u043C\u0456\\perfusionanalyzer\\perfusionanalyzer\\views\\framesview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{E0D5725C-F0E2-4132-9B7D-109491C8DCE1}|PerfusionAnalyzer\\PerfusionAnalyzer.csproj|solutionrelative:perfusionanalyzer\\views\\framesview.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -63,14 +63,14 @@
             {
               "$type": "Document",
               "DocumentIndex": 0,
-              "Title": "SplineInterpolator.cs",
-              "DocumentMoniker": "C:\\dima\\\u0414\u0438\u043F\u043B\u043E\u043C \u041C\u0430\u0433\u0456\u0441\u0442\u0440 \u0424\u0411\u041C\u0406\\PerfusionAnalyzer\\PerfusionAnalyzer\\Math\\SplineInterpolator.cs",
-              "RelativeDocumentMoniker": "PerfusionAnalyzer\\Math\\SplineInterpolator.cs",
-              "ToolTip": "C:\\dima\\\u0414\u0438\u043F\u043B\u043E\u043C \u041C\u0430\u0433\u0456\u0441\u0442\u0440 \u0424\u0411\u041C\u0406\\PerfusionAnalyzer\\PerfusionAnalyzer\\Math\\SplineInterpolator.cs",
-              "RelativeToolTip": "PerfusionAnalyzer\\Math\\SplineInterpolator.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAjAAAAAAAAAA==",
+              "Title": "FramesView.xaml.cs",
+              "DocumentMoniker": "C:\\dima\\\u0414\u0438\u043F\u043B\u043E\u043C \u041C\u0430\u0433\u0456\u0441\u0442\u0440 \u0424\u0411\u041C\u0406\\PerfusionAnalyzer\\PerfusionAnalyzer\\Views\\FramesView.xaml.cs",
+              "RelativeDocumentMoniker": "PerfusionAnalyzer\\Views\\FramesView.xaml.cs",
+              "ToolTip": "C:\\dima\\\u0414\u0438\u043F\u043B\u043E\u043C \u041C\u0430\u0433\u0456\u0441\u0442\u0440 \u0424\u0411\u041C\u0406\\PerfusionAnalyzer\\PerfusionAnalyzer\\Views\\FramesView.xaml.cs",
+              "RelativeToolTip": "PerfusionAnalyzer\\Views\\FramesView.xaml.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAhwDAAAAAtAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T15:19:46.991Z",
+              "WhenOpened": "2025-09-26T14:49:45.595Z",
               "EditorCaption": ""
             }
           ]

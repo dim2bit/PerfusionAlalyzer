@@ -46,7 +46,7 @@ public partial class FramesView : System.Windows.Controls.UserControl
         int delta = e.Delta > 0 ? -1 : 1;
         int newIndex = _viewModel.CurrentFrameIndex - delta;
 
-        newIndex = Math.Max(0, Math.Min(_viewModel.MaxFrameIndex, newIndex));
+        newIndex = System.Math.Max(0, System.Math.Min(_viewModel.MaxFrameIndex, newIndex));
         _viewModel.CurrentFrameIndex = newIndex;
 
         e.Handled = true;
