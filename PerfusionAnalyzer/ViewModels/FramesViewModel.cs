@@ -16,6 +16,8 @@ public class FramesViewModel : INotifyPropertyChanged
     private int _currentIndex = 0;
     private ObservableCollection<DicomImage> _dicomFrames = new();
 
+    private double[] _timePoints;
+
     public event EventHandler? FilesLoaded;
     public event EventHandler? FrameChanged;
 
@@ -48,8 +50,8 @@ public class FramesViewModel : INotifyPropertyChanged
     public int MaxFrameIndex => _dicomFrames.Count > 0 ? _dicomFrames.Count - 1 : 0;
 
     public string CurrentFrameTimeDisplay =>
-        (CurrentFrameIndex >= 0 && CurrentFrameIndex < _dicomFrames.Count)
-            ? $"Час: {_dicomFrames[CurrentFrameIndex].Dataset.GetSingleValueOrDefault(DicomTag.TriggerTime, 0.0) / 1000:F2} с"
+        (_timePoints != null && !_timePoints.Any(t => t < 0) && CurrentFrameIndex >= 0 && CurrentFrameIndex < _timePoints.Length)
+            ? $"Час: {_timePoints[CurrentFrameIndex]:F2} с"
             : "";
 
     public int CurrentFrameIndex
@@ -81,6 +83,7 @@ public class FramesViewModel : INotifyPropertyChanged
             return;
 
         _dicomFrames = new ObservableCollection<DicomImage>(images);
+        _timePoints = DicomUtils.GetTimePoints(images);
         _currentIndex = 0;
 
         OnPropertyChanged(nameof(CurrentDicomFrame));

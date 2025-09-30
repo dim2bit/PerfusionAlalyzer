@@ -71,6 +71,61 @@ public static class SignalFilter
         return result;
     }
 
+    public static float[,] ApplyMaskedGaussianFilter(float[,] map, bool[,] mask, int kernelSize = 3, double sigma = 1.0)
+    {
+        int h = map.GetLength(0), w = map.GetLength(1);
+        float[,] result = new float[h, w];
+        int k = kernelSize / 2;
+
+        double[,] kernel = new double[kernelSize, kernelSize];
+        double sum = 0.0;
+
+        for (int dy = -k; dy <= k; dy++)
+        {
+            for (int dx = -k; dx <= k; dx++)
+            {
+                double weight = System.Math.Exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
+                kernel[dy + k, dx + k] = weight;
+                sum += weight;
+            }
+        }
+
+        for (int y = 0; y < kernelSize; y++)
+            for (int x = 0; x < kernelSize; x++)
+                kernel[y, x] /= sum;
+
+        Parallel.For(0, h, y =>
+        {
+            for (int x = 0; x < w; x++)
+            {
+                if (!mask[y, x]) { result[y, x] = 0; continue; }
+
+                double acc = 0.0;
+                double weightSum = 0.0;
+
+                for (int dy = -k; dy <= k; dy++)
+                {
+                    for (int dx = -k; dx <= k; dx++)
+                    {
+                        int ny = y + dy;
+                        int nx = x + dx;
+
+                        if (ny >= 0 && ny < h && nx >= 0 && nx < w && mask[ny, nx])
+                        {
+                            double weight = kernel[dy + k, dx + k];
+                            acc += map[ny, nx] * weight;
+                            weightSum += weight;
+                        }
+                    }
+                }
+
+                result[y, x] = weightSum > 0 ? (float)(acc / weightSum) : map[y, x];
+            }
+        });
+
+        return result;
+    }
+
     public static float[,] ApplyMaskedBilateralFilter(float[,] map, bool[,] mask, int kernelSize = 3, double sigmaSpatial = 2.0, double sigmaRange = 25.0)
     {
         int h = map.GetLength(0), w = map.GetLength(1);

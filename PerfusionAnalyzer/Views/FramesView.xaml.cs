@@ -24,6 +24,7 @@ public partial class FramesView : System.Windows.Controls.UserControl
         {
             MajorVersion = 4,
             MinorVersion = 2,
+            GraphicsProfile = OpenTK.Windowing.Common.ContextProfile.Compatability
         };
         OpenTkControl.Start(settings);
 
@@ -35,9 +36,7 @@ public partial class FramesView : System.Windows.Controls.UserControl
         _viewModel.FrameChanged += (_, __) =>
         {
             if (_viewModel.CurrentDicomFrame != null)
-            {
                 _renderer.LoadFrameTexture(_viewModel.CurrentDicomFrame);
-            }
         };
     }
 
@@ -46,7 +45,7 @@ public partial class FramesView : System.Windows.Controls.UserControl
         int delta = e.Delta > 0 ? -1 : 1;
         int newIndex = _viewModel.CurrentFrameIndex - delta;
 
-        newIndex = System.Math.Max(0, System.Math.Min(_viewModel.MaxFrameIndex, newIndex));
+        newIndex = Math.Max(0, Math.Min(_viewModel.MaxFrameIndex, newIndex));
         _viewModel.CurrentFrameIndex = newIndex;
 
         e.Handled = true;
@@ -56,8 +55,8 @@ public partial class FramesView : System.Windows.Controls.UserControl
     {
         if (_renderer != null)
         {
-            int controlWidth = (int)OpenTkControl.ActualWidth;
-            int controlHeight = (int)OpenTkControl.ActualHeight;
+            int controlWidth = (int)OpenTkControl.Width;
+            int controlHeight = (int)OpenTkControl.Height;
 
             _renderer.Render(controlWidth, controlHeight);
         }

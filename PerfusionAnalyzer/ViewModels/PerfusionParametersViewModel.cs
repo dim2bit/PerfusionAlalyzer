@@ -10,19 +10,33 @@ using System.Windows;
 using System.Windows.Input;
 using PerfusionAnalyzer.Core.Utils;
 using System.IO;
+using Dicom.Imaging;
 
 namespace PerfusionAnalyzer.ViewModels;
 
 public class PerfusionParametersViewModel : INotifyPropertyChanged
 {
-    private readonly ProcessingSettings _processingSettings = new();
+    private readonly PostProcessingSettings _postProcessingSettings = new();
 
-    private PerfusionMaps _originalMaps;
+    private readonly PerfusionMaps _maps = new();
+    private readonly PerfusionMaps _originalMaps = new();
 
     private PerfusionService _perfusionService;
 
-    public ObservableCollection<DescriptorType> AvailableDescriptors { get; } =
-        new ObservableCollection<DescriptorType> { DescriptorType.AUC, DescriptorType.MTT, DescriptorType.TTP };
+    public ObservableCollection<ComboBoxItem> AvailableFilters { get; } = new ObservableCollection<ComboBoxItem>
+    {
+        new ComboBoxItem { DisplayName = "Не фільтрується", Value = FilterType.None },
+        new ComboBoxItem { DisplayName = "Медіанний", Value = FilterType.Median },
+        new ComboBoxItem { DisplayName = "Гаусовий", Value = FilterType.Gaussian },
+        new ComboBoxItem { DisplayName = "Білатеральний", Value = FilterType.Bilateral }
+    };
+
+    public ObservableCollection<DescriptorType> AvailableDescriptors { get; } = new ObservableCollection<DescriptorType> 
+    { 
+        DescriptorType.AUC, 
+        DescriptorType.MTT, 
+        DescriptorType.TTP 
+    };
 
     private PlotModel _perfusionPlotModel;
     public PlotModel PerfusionPlotModel
@@ -34,6 +48,19 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             {
                 _perfusionPlotModel = value;
                 OnPropertyChanged(nameof(PerfusionPlotModel));
+            }
+        }
+    }
+
+    public FilterType SelectedFilter
+    {
+        get => _postProcessingSettings.FilterType;
+        set
+        {
+            if (_postProcessingSettings.FilterType != value)
+            {
+                _postProcessingSettings.FilterType = value;
+                OnPropertyChanged(nameof(SelectedFilter));
             }
         }
     }
@@ -52,98 +79,108 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
-    private string _aucResult = "";
-    public string AUCResult
+    private string _aucValue;
+    public string AUCValue
     {
-        get => _aucResult;
+        get => _aucValue;
         set
         {
-            if (_aucResult != value)
+            if (_aucValue != value)
             {
-                _aucResult = value;
-                OnPropertyChanged(nameof(AUCResult));
+                _aucValue = value;
+                OnPropertyChanged(nameof(AUCValue));
             }
         }
     }
 
-    private string _mttResult = "";
-    public string MTTResult
+    private string _mttValue;
+    public string MTTValue
     {
-        get => _mttResult;
+        get => _mttValue;
         set
         {
-            if (_mttResult != value)
+            if (_mttValue != value)
             {
-                _mttResult = value;
-                OnPropertyChanged(nameof(MTTResult));
+                _mttValue = value;
+                OnPropertyChanged(nameof(MTTValue));
             }
         }
     }
 
-    private string _ttpResult = "";
-    public string TTPResult
+    private string _ttpValue;
+    public string TTPValue
     {
-        get => _ttpResult;
+        get => _ttpValue;
         set
         {
-            if (_ttpResult != value)
+            if (_ttpValue != value)
             {
-                _ttpResult = value;
-                OnPropertyChanged(nameof(TTPResult));
+                _ttpValue = value;
+                OnPropertyChanged(nameof(TTPValue));
             }
         }
     }
 
-    private float[,] _aucMap;
     public float[,] AUCMap
     {
-        get => _aucMap;
+        get => _maps.AUCMap;
         set
         {
-            if (_aucMap != value)
+            if (_maps.AUCMap != value)
             {
-                _aucMap = value;
+                _maps.AUCMap = value;
                 OnPropertyChanged(nameof(AUCMap));
             }
         }
     }
 
-    private float[,] _mttMap;
     public float[,] MTTMap
     {
-        get => _mttMap;
+        get => _maps.MTTMap;
         set
         {
-            if (_mttMap != value)
+            if (_maps.MTTMap != value)
             {
-                _mttMap = value;
+                _maps.MTTMap = value;
                 OnPropertyChanged(nameof(MTTMap));
             }
         }
     }
 
-    private float[,] _ttpMap;
     public float[,] TTPMap
     {
-        get => _ttpMap;
+        get => _maps.TTPMap;
         set
         {
-            if (_ttpMap != value)
+            if (_maps.TTPMap != value)
             {
-                _ttpMap = value;
+                _maps.TTPMap = value;
                 OnPropertyChanged(nameof(TTPMap));
+            }
+        }
+    }
+
+    public bool IsPostProcessingEnabled
+    {
+        get => _postProcessingSettings.IsEnabled;
+        set
+        {
+            if (_postProcessingSettings.IsEnabled != value)
+            {
+                _postProcessingSettings.IsEnabled = value;
+                OnPropertyChanged(nameof(IsPostProcessingEnabled));
             }
         }
     }
 
     public double Gamma
     {
-        get => _processingSettings.Gamma;
+        get => _postProcessingSettings.Gamma;
         set
         {
-            if (_processingSettings.Gamma != value)
+            if (_postProcessingSettings.Gamma != value)
             {
-                _processingSettings.Gamma = value;
+                _postProcessingSettings.Gamma = value;
                 OnPropertyChanged(nameof(Gamma));
             }
         }
@@ -151,12 +188,12 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
     public int KernelSize
     {
-        get => _processingSettings.KernelSize;
+        get => _postProcessingSettings.KernelSize;
         set
         {
-            if (_processingSettings.KernelSize != value)
+            if (_postProcessingSettings.KernelSize != value)
             {
-                _processingSettings.KernelSize = value;
+                _postProcessingSettings.KernelSize = value;
                 OnPropertyChanged(nameof(KernelSize));
             }
         }
@@ -164,26 +201,13 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
     public ushort Threshold
     {
-        get => _processingSettings.Threshold;
+        get => _postProcessingSettings.Threshold;
         set
         {
-            if (_processingSettings.Threshold != value)
+            if (_postProcessingSettings.Threshold != value)
             {
-                _processingSettings.Threshold = value;
+                _postProcessingSettings.Threshold = value;
                 OnPropertyChanged(nameof(Threshold));
-            }
-        }
-    }
-
-    public bool IsPostProcessingEnabled
-    {
-        get => _processingSettings.IsPostProcessingEnabled;
-        set
-        {
-            if (_processingSettings.IsPostProcessingEnabled != value)
-            {
-                _processingSettings.IsPostProcessingEnabled = value;
-                OnPropertyChanged(nameof(IsPostProcessingEnabled));
             }
         }
     }
@@ -202,20 +226,6 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
-    private string _errorMessage = "";
-    public string ErrorMessage
-    {
-        get => _errorMessage;
-        set
-        {
-            if (_errorMessage != value)
-            {
-                _errorMessage = value;
-                OnPropertyChanged(nameof(ErrorMessage));
-            }
-        }
-    }
-
     public ICommand ExportMapCommand { get; }
 
     public PerfusionParametersViewModel()
@@ -229,42 +239,34 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         });
     }
 
-    public async Task CalculateAllAsync()
+    public async Task InitializeAsync(List<DicomImage> frames)
     {
         try
         {
-            var frames = DicomStorage.Instance.Images;
             _perfusionService = new PerfusionService(frames);
 
             var perfusionMetrics = await _perfusionService.CalculateMetricsAsync();
             var perfusionMaps = await _perfusionService.CalculateMapsAsync();
 
-            AUCResult = perfusionMetrics.AUCResult;
-            MTTResult = perfusionMetrics.MTTResult;
-            TTPResult = perfusionMetrics.TTPResult;
+            AUCValue = perfusionMetrics.AUC.ToString("F4");
+            MTTValue = perfusionMetrics.MTT.ToString("F4");
+            TTPValue = perfusionMetrics.TTP.ToString("F4");
 
             AUCMap = perfusionMaps.AUCMap;
             MTTMap = perfusionMaps.MTTMap;
             TTPMap = perfusionMaps.TTPMap;
 
-            _originalMaps = new PerfusionMaps
-            {
-                AUCMap = (float[,])AUCMap.Clone(),
-                MTTMap = (float[,])MTTMap.Clone(),
-                TTPMap = (float[,])TTPMap.Clone()
-            };
+            _originalMaps.AUCMap = (float[,])AUCMap.Clone();
+            _originalMaps.MTTMap = (float[,])MTTMap.Clone();
+            _originalMaps.TTPMap = (float[,])TTPMap.Clone();
 
-            await ReprocessMapsAsync();
+            await PostProcessMapsAsync();
 
             BuildPlot(perfusionMetrics.TimePoints, perfusionMetrics.ConcentrationPoints);
 
             IsDataLoaded = true;
 
             OnPropertyChanged(nameof(SelectedDescriptor));
-        }
-        catch (InvalidOperationException ex)
-        {
-            System.Windows.MessageBox.Show($"{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
         }
         catch (Exception ex)
         {
@@ -273,21 +275,21 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
-    public async Task ReprocessMapsAsync()
+    public async Task PostProcessMapsAsync()
     {
         try
         {
             if (!IsPostProcessingEnabled)
             {
-                AUCMap = _originalMaps.AUCMap;
-                MTTMap = _originalMaps.MTTMap;
-                TTPMap = _originalMaps.TTPMap;
+                AUCMap = (float[,])_originalMaps.AUCMap.Clone();
+                MTTMap = (float[,])_originalMaps.MTTMap.Clone();
+                TTPMap = (float[,])_originalMaps.TTPMap.Clone();
                 return;
             }
 
             if (_perfusionService != null)
             {
-                var perfusionMapsPostProcessed = await _perfusionService.PostProcessMapsAsync(FilterType.Median, _originalMaps, Threshold, KernelSize, Gamma);
+                var perfusionMapsPostProcessed = await _perfusionService.PostProcessMapsAsync(_originalMaps, _postProcessingSettings);
 
                 AUCMap = perfusionMapsPostProcessed.AUCMap;
                 MTTMap = perfusionMapsPostProcessed.MTTMap;
@@ -345,7 +347,10 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
     private void BuildPlot(double[] timePoints, double[] concentrationPoints)
     {
-        var plotModel = new PlotModel { Title = "Час – Концентрація" };
+        var plotModel = new PlotModel 
+        {
+            Title = "Час – Концентрація"
+        };
 
         plotModel.Axes.Add(new LinearAxis
         {

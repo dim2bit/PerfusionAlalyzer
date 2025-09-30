@@ -21,22 +21,33 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Vertical" Grid.Row="0" Margin="0,0,20,30" MaxHeight="180" IsEnabled="{Binding IsDataLoaded}">
+            <StackPanel Orientation="Vertical" Grid.Row="0" Margin="0,0,20,15" MaxHeight="180" IsEnabled="{Binding IsDataLoaded}">
                 <CheckBox Content="Постобробка"
                     IsChecked="{Binding IsPostProcessingEnabled, Mode=TwoWay}"
                     FontSize="13"
                     Margin="0,0,0,10"/>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
-                    <TextBlock Text="Поріг маски:" Width="80" VerticalAlignment="Center" FontSize="13"/>
-                    <Slider Minimum="0" Maximum="255" Value="{Binding Threshold, Mode=TwoWay}" IsEnabled="{Binding IsPostProcessingEnabled}" Width="180" Height="20" />
-                    <TextBlock Text="{Binding Threshold}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
+                    <TextBlock Text="Фільтр:" Width="80" VerticalAlignment="Center" FontSize="13"/>
+                    <ComboBox
+                        ItemsSource="{Binding AvailableFilters}"
+                        SelectedValue="{Binding SelectedFilter, Mode=TwoWay}"
+                        SelectedValuePath="Value"
+                        DisplayMemberPath="DisplayName"
+                        Width="180" Height="25" FontSize="13"
+                        IsEnabled="{Binding IsPostProcessingEnabled}" />
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
                     <TextBlock Text="Гама:" Width="80" VerticalAlignment="Center" FontSize="13"/>
                     <Slider Minimum="0.1" Maximum="2.0" Value="{Binding Gamma, Mode=TwoWay}" IsEnabled="{Binding IsPostProcessingEnabled}" Width="180" Height="20"/>
                     <TextBlock Text="{Binding Gamma, StringFormat=F2}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
+                    <TextBlock Text="Поріг маски:" Width="80" VerticalAlignment="Center" FontSize="13"/>
+                    <Slider Minimum="0" Maximum="255" Value="{Binding Threshold, Mode=TwoWay}" IsEnabled="{Binding IsPostProcessingEnabled}" Width="180" Height="20" />
+                    <TextBlock Text="{Binding Threshold}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -51,15 +62,15 @@
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
                     <StackPanel Orientation="Horizontal" Margin="10,0">
                         <TextBlock Text="AUC:" FontWeight="Bold" Margin="0,0,5,0"/>
-                        <TextBlock Text="{Binding AUCResult}"/>
+                        <TextBlock Text="{Binding AUCValue}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="20,0">
                         <TextBlock Text="MTT:" FontWeight="Bold" Margin="0,0,5,0"/>
-                        <TextBlock Text="{Binding MTTResult}"/>
+                        <TextBlock Text="{Binding MTTValue}"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="20,0">
                         <TextBlock Text="TTP:" FontWeight="Bold" Margin="0,0,5,0"/>
-                        <TextBlock Text="{Binding TTPResult}"/>
+                        <TextBlock Text="{Binding TTPValue}"/>
                     </StackPanel>
                 </StackPanel>
 

@@ -1,5 +1,5 @@
-﻿using Dicom;
-using Dicom.Imaging;
+﻿using Dicom.Imaging;
+using PerfusionAnalyzer.Core.Dicom;
 
 namespace PerfusionAnalyzer.Core.Services;
 
@@ -18,9 +18,7 @@ public class DicomStorage
 
     public void SetImages(List<DicomImage> images)
     {
-        _dicomImages = images
-            .OrderBy(image => image.Dataset.GetSingleValueOrDefault(DicomTag.TriggerTime, 0.0))
-            .ToList();
+        _dicomImages = images.OrderBy(DicomUtils.GetTriggerTime).ToList();
         ImagesUpdated?.Invoke(this, EventArgs.Empty);
     }
 }

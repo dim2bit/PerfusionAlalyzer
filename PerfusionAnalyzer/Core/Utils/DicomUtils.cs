@@ -19,9 +19,12 @@ public static class DicomUtils
 
     public static double[] GetTimePoints(List<DicomImage> images)
     {
-        return images
-            .Select(img => img.Dataset.GetSingleValueOrDefault(DicomTag.TriggerTime, -1.0) / 1000.0)
-            .ToArray();
+        return images.Select(GetTriggerTime).ToArray();
+    }
+
+    public static double GetTriggerTime(DicomImage image)
+    {
+        return image.Dataset.GetSingleValueOrDefault(DicomTag.TriggerTime, -1.0) / 1000;
     }
 
     public static double GetEchoTime(DicomImage image)

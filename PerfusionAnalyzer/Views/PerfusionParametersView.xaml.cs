@@ -26,6 +26,7 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
         {
             MajorVersion = 4,
             MinorVersion = 2,
+            GraphicsProfile = OpenTK.Windowing.Common.ContextProfile.Compatability
         };
         OpenTkControl.Start(settings);
 
@@ -36,18 +37,21 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
                 _needUpdateTexture = true;
             }
             else if (e.PropertyName == nameof(_viewModel.IsPostProcessingEnabled) ||
+                e.PropertyName == nameof(_viewModel.SelectedFilter) ||
                 e.PropertyName == nameof(_viewModel.Gamma) ||
                 e.PropertyName == nameof(_viewModel.Threshold) ||
                 e.PropertyName == nameof(_viewModel.KernelSize))
             {
+                await _viewModel.PostProcessMapsAsync();
                 _needUpdateTexture = true;
-                await _viewModel.ReprocessMapsAsync();
             }
         };
 
         DicomStorage.Instance.ImagesUpdated += async (_, __) =>
         {
-            await _viewModel.CalculateAllAsync();
+            var frames = DicomStorage.Instance.Images;
+            if (frames != null && frames.Count > 0)
+                await _viewModel.InitializeAsync(frames);
         };
     }
 
@@ -60,8 +64,8 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
                 UpdateTexture();
                 _needUpdateTexture = false;
             }
-            int controlWidth = (int)OpenTkControl.ActualWidth;
-            int controlHeight = (int)OpenTkControl.ActualHeight;
+            int controlWidth = (int)OpenTkControl.Width;
+            int controlHeight = (int)OpenTkControl.Height;
 
             _renderer.Render(controlWidth, controlHeight);
         }
