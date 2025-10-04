@@ -16,7 +16,7 @@ namespace PerfusionAnalyzer.ViewModels;
 
 public class PerfusionParametersViewModel : INotifyPropertyChanged
 {
-    private readonly PostProcessingSettings _postProcessingSettings = new();
+    private readonly ProcessingSettings _processingSettings = new();
 
     private readonly PerfusionMaps _maps = new();
     private readonly PerfusionMaps _originalMaps = new();
@@ -26,9 +26,8 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
     public ObservableCollection<ComboBoxItem> AvailableFilters { get; } = new ObservableCollection<ComboBoxItem>
     {
         new ComboBoxItem { DisplayName = "Не фільтрується", Value = FilterType.None },
-        new ComboBoxItem { DisplayName = "Медіанний", Value = FilterType.Median },
-        new ComboBoxItem { DisplayName = "Гаусовий", Value = FilterType.Gaussian },
-        new ComboBoxItem { DisplayName = "Білатеральний", Value = FilterType.Bilateral }
+        new ComboBoxItem { DisplayName = "Гаусів", Value = FilterType.Gaussian },
+        new ComboBoxItem { DisplayName = "Рухоме середнє", Value = FilterType.MovingAverage }
     };
 
     public ObservableCollection<DescriptorType> AvailableDescriptors { get; } = new ObservableCollection<DescriptorType> 
@@ -54,12 +53,12 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
     public FilterType SelectedFilter
     {
-        get => _postProcessingSettings.FilterType;
+        get => _processingSettings.FilterType;
         set
         {
-            if (_postProcessingSettings.FilterType != value)
+            if (_processingSettings.FilterType != value)
             {
-                _postProcessingSettings.FilterType = value;
+                _processingSettings.FilterType = value;
                 OnPropertyChanged(nameof(SelectedFilter));
             }
         }
@@ -160,54 +159,41 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
-    public bool IsPostProcessingEnabled
+    public int ContrastArrivalPercent
     {
-        get => _postProcessingSettings.IsEnabled;
+        get => _processingSettings.ContrastArrivalPercent;
         set
         {
-            if (_postProcessingSettings.IsEnabled != value)
+            if (_processingSettings.ContrastArrivalPercent != value)
             {
-                _postProcessingSettings.IsEnabled = value;
-                OnPropertyChanged(nameof(IsPostProcessingEnabled));
+                _processingSettings.ContrastArrivalPercent = value;
+                OnPropertyChanged(nameof(ContrastArrivalPercent));
             }
         }
     }
 
     public double Gamma
     {
-        get => _postProcessingSettings.Gamma;
+        get => _processingSettings.Gamma;
         set
         {
-            if (_postProcessingSettings.Gamma != value)
+            if (_processingSettings.Gamma != value)
             {
-                _postProcessingSettings.Gamma = value;
+                _processingSettings.Gamma = value;
                 OnPropertyChanged(nameof(Gamma));
             }
         }
     }
 
-    public int KernelSize
+    public ushort BackgroundThreshold
     {
-        get => _postProcessingSettings.KernelSize;
+        get => _processingSettings.BackgroundThreshold;
         set
         {
-            if (_postProcessingSettings.KernelSize != value)
+            if (_processingSettings.BackgroundThreshold != value)
             {
-                _postProcessingSettings.KernelSize = value;
-                OnPropertyChanged(nameof(KernelSize));
-            }
-        }
-    }
-
-    public ushort Threshold
-    {
-        get => _postProcessingSettings.Threshold;
-        set
-        {
-            if (_postProcessingSettings.Threshold != value)
-            {
-                _postProcessingSettings.Threshold = value;
-                OnPropertyChanged(nameof(Threshold));
+                _processingSettings.BackgroundThreshold = value;
+                OnPropertyChanged(nameof(BackgroundThreshold));
             }
         }
     }
@@ -245,8 +231,8 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         {
             _perfusionService = new PerfusionService(frames);
 
-            var perfusionMetrics = await _perfusionService.CalculateMetricsAsync();
-            var perfusionMaps = await _perfusionService.CalculateMapsAsync();
+            var perfusionMetrics = await _perfusionService.CalculateMetricsAsync(_processingSettings);
+            var perfusionMaps = await _perfusionService.CalculateMapsAsync(_processingSettings);
 
             AUCValue = perfusionMetrics.AUC.ToString("F4");
             MTTValue = perfusionMetrics.MTT.ToString("F4");
@@ -262,7 +248,8 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
             await PostProcessMapsAsync();
 
-            BuildPlot(perfusionMetrics.TimePoints, perfusionMetrics.ConcentrationPoints);
+            BuildPlot(perfusionMetrics.TimePoints, perfusionMetrics.ConcentrationPoints,
+                perfusionMetrics.SlicedTimePoints, perfusionMetrics.SlicedConcentrationPoints);
 
             IsDataLoaded = true;
 
@@ -279,17 +266,9 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
     {
         try
         {
-            if (!IsPostProcessingEnabled)
-            {
-                AUCMap = (float[,])_originalMaps.AUCMap.Clone();
-                MTTMap = (float[,])_originalMaps.MTTMap.Clone();
-                TTPMap = (float[,])_originalMaps.TTPMap.Clone();
-                return;
-            }
-
             if (_perfusionService != null)
             {
-                var perfusionMapsPostProcessed = await _perfusionService.PostProcessMapsAsync(_originalMaps, _postProcessingSettings);
+                var perfusionMapsPostProcessed = await _perfusionService.PostProcessMapsAsync(_originalMaps, _processingSettings);
 
                 AUCMap = perfusionMapsPostProcessed.AUCMap;
                 MTTMap = perfusionMapsPostProcessed.MTTMap;
@@ -345,9 +324,11 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
-    private void BuildPlot(double[] timePoints, double[] concentrationPoints)
+    private void BuildPlot(
+        double[] timePoints, double[] concentrationPoints,
+        double[] slicedTimePoints, double[] slicedConcentrationPoints)
     {
-        var plotModel = new PlotModel 
+        var plotModel = new PlotModel
         {
             Title = "Час – Концентрація"
         };
@@ -364,17 +345,35 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             Title = "s(t)"
         });
 
-        var series = new LineSeries
+        var fullSeries = new LineSeries
         {
-            Color = OxyColors.SkyBlue
+            Color = OxyColors.LightBlue,
+            StrokeThickness = 2,
+            MarkerType = MarkerType.None
         };
 
         for (int i = 0; i < timePoints.Length; i++)
         {
-            series.Points.Add(new DataPoint(timePoints[i], concentrationPoints[i]));
+            fullSeries.Points.Add(new DataPoint(timePoints[i], concentrationPoints[i]));
         }
 
-        plotModel.Series.Add(series);
+        var cutSeries = new LineSeries
+        {
+            Color = OxyColors.Red,
+            StrokeThickness = 2,
+            MarkerType = MarkerType.Circle,
+            MarkerSize = 2,
+            MarkerStroke = OxyColors.DarkRed,
+            MarkerFill = OxyColors.White
+        };
+
+        for (int i = 0; i < slicedTimePoints.Length; i++)
+        {
+            cutSeries.Points.Add(new DataPoint(slicedTimePoints[i], slicedConcentrationPoints[i]));
+        }
+
+        plotModel.Series.Add(fullSeries);
+        plotModel.Series.Add(cutSeries);
 
         PerfusionPlotModel = plotModel;
     }

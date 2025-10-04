@@ -2,6 +2,37 @@
 
 public static class SignalFilter
 {
+    /// <summary>
+    /// Рухоме середнє (Moving Average Filter)
+    /// </summary>
+    public static double[] ApplyMovingAverage(double[] data, int windowSize = 3)
+    {
+        int n = data.Length;
+        double[] result = new double[n];
+        int half = windowSize / 2;
+
+        for (int i = 0; i < n; i++)
+        {
+            double sum = 0;
+            int count = 0;
+            for (int j = -half; j <= half; j++)
+            {
+                int idx = i + j;
+                if (idx >= 0 && idx < n)
+                {
+                    sum += data[idx];
+                    count++;
+                }
+            }
+            result[i] = sum / count;
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Гаусів фільтр (Gaussian Filter)
+    /// </summary>
     public static double[] ApplyGaussianFilter(double[] data, int radius = 2, double sigma = 1.0)
     {
         int size = radius * 2 + 1;
@@ -37,137 +68,30 @@ public static class SignalFilter
         return result;
     }
 
-    public static float[,] ApplyMaskedMedianFilter(float[,] map, bool[,] mask, int kernelSize = 3)
+    /// <summary>
+    /// Медіанний фільтр (Median Filter)
+    /// </summary>
+    public static double[] ApplyMedianFilter(double[] data, int windowSize = 3)
     {
-        int h = map.GetLength(0), w = map.GetLength(1);
-        float[,] result = new float[h, w];
-        int k = kernelSize / 2;
+        int n = data.Length;
+        double[] result = new double[n];
+        int half = windowSize / 2;
 
-        Parallel.For(0, h, y =>
+        for (int i = 0; i < n; i++)
         {
-            for (int x = 0; x < w; x++)
+            List<double> window = new();
+
+            for (int j = -half; j <= half; j++)
             {
-                if (!mask[y, x]) { result[y, x] = 0; continue; }
-
-                List<float> neighbors = new();
-
-                for (int dy = -k; dy <= k; dy++)
-                    for (int dx = -k; dx <= k; dx++)
-                    {
-                        int ny = y + dy, nx = x + dx;
-                        if (ny >= 0 && ny < h && nx >= 0 && nx < w && mask[ny, nx])
-                            neighbors.Add(map[ny, nx]);
-                    }
-
-                if (neighbors.Count > 0)
-                {
-                    neighbors.Sort();
-                    result[y, x] = neighbors[neighbors.Count / 2];
-                }
-                else result[y, x] = map[y, x];
+                int idx = i + j;
+                if (idx < 0) idx = 0;
+                if (idx >= n) idx = n - 1;
+                window.Add(data[idx]);
             }
-        });
 
-        return result;
-    }
-
-    public static float[,] ApplyMaskedGaussianFilter(float[,] map, bool[,] mask, int kernelSize = 3, double sigma = 1.0)
-    {
-        int h = map.GetLength(0), w = map.GetLength(1);
-        float[,] result = new float[h, w];
-        int k = kernelSize / 2;
-
-        double[,] kernel = new double[kernelSize, kernelSize];
-        double sum = 0.0;
-
-        for (int dy = -k; dy <= k; dy++)
-        {
-            for (int dx = -k; dx <= k; dx++)
-            {
-                double weight = System.Math.Exp(-(dx * dx + dy * dy) / (2 * sigma * sigma));
-                kernel[dy + k, dx + k] = weight;
-                sum += weight;
-            }
+            window.Sort();
+            result[i] = window[window.Count / 2];
         }
-
-        for (int y = 0; y < kernelSize; y++)
-            for (int x = 0; x < kernelSize; x++)
-                kernel[y, x] /= sum;
-
-        Parallel.For(0, h, y =>
-        {
-            for (int x = 0; x < w; x++)
-            {
-                if (!mask[y, x]) { result[y, x] = 0; continue; }
-
-                double acc = 0.0;
-                double weightSum = 0.0;
-
-                for (int dy = -k; dy <= k; dy++)
-                {
-                    for (int dx = -k; dx <= k; dx++)
-                    {
-                        int ny = y + dy;
-                        int nx = x + dx;
-
-                        if (ny >= 0 && ny < h && nx >= 0 && nx < w && mask[ny, nx])
-                        {
-                            double weight = kernel[dy + k, dx + k];
-                            acc += map[ny, nx] * weight;
-                            weightSum += weight;
-                        }
-                    }
-                }
-
-                result[y, x] = weightSum > 0 ? (float)(acc / weightSum) : map[y, x];
-            }
-        });
-
-        return result;
-    }
-
-    public static float[,] ApplyMaskedBilateralFilter(float[,] map, bool[,] mask, int kernelSize = 3, double sigmaSpatial = 2.0, double sigmaRange = 25.0)
-    {
-        int h = map.GetLength(0), w = map.GetLength(1);
-        float[,] result = new float[h, w];
-        int k = kernelSize / 2;
-
-        double twoSigmaSpatial2 = 2 * sigmaSpatial * sigmaSpatial;
-        double twoSigmaRange2 = 2 * sigmaRange * sigmaRange;
-
-        Parallel.For(0, h, y =>
-        {
-            for (int x = 0; x < w; x++)
-            {
-                if (!mask[y, x]) { result[y, x] = 0; continue; }
-
-                double sum = 0.0;
-                double weightSum = 0.0;
-                float centerVal = map[y, x];
-
-                for (int dy = -k; dy <= k; dy++)
-                {
-                    for (int dx = -k; dx <= k; dx++)
-                    {
-                        int ny = y + dy, nx = x + dx;
-
-                        if (ny >= 0 && ny < h && nx >= 0 && nx < w && mask[ny, nx])
-                        {
-                            float neighborVal = map[ny, nx];
-                            double spatialDist2 = dx * dx + dy * dy;
-                            double rangeDiff2 = (neighborVal - centerVal) * (neighborVal - centerVal);
-
-                            double weight = System.Math.Exp(-spatialDist2 / twoSigmaSpatial2) * System.Math.Exp(-rangeDiff2 / twoSigmaRange2);
-
-                            sum += neighborVal * weight;
-                            weightSum += weight;
-                        }
-                    }
-                }
-
-                result[y, x] = (float)(sum / weightSum);
-            }
-        });
 
         return result;
     }

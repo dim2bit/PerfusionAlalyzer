@@ -3,7 +3,6 @@
 public enum FilterType
 {
     None,
-    Median,
     Gaussian,
-    Bilateral
+    MovingAverage
 }

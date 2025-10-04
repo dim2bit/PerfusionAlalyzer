@@ -36,20 +36,24 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
             {
                 _needUpdateTexture = true;
             }
-            else if (e.PropertyName == nameof(_viewModel.IsPostProcessingEnabled) ||
-                e.PropertyName == nameof(_viewModel.SelectedFilter) ||
-                e.PropertyName == nameof(_viewModel.Gamma) ||
-                e.PropertyName == nameof(_viewModel.Threshold) ||
-                e.PropertyName == nameof(_viewModel.KernelSize))
+            else if (e.PropertyName == nameof(_viewModel.SelectedFilter) ||
+                e.PropertyName == nameof(_viewModel.ContrastArrivalPercent))
+            {
+                var frames = DicomStorage.Instance.CurrentSlice;
+                if (frames != null && frames.Count > 0)
+                    await _viewModel.InitializeAsync(frames);
+            }
+            else if (e.PropertyName == nameof(_viewModel.Gamma) ||
+                e.PropertyName == nameof(_viewModel.BackgroundThreshold))
             {
                 await _viewModel.PostProcessMapsAsync();
                 _needUpdateTexture = true;
             }
         };
 
-        DicomStorage.Instance.ImagesUpdated += async (_, __) =>
+        DicomStorage.Instance.SliceUpdated += async (_, __) =>
         {
-            var frames = DicomStorage.Instance.Images;
+            var frames = DicomStorage.Instance.CurrentSlice;
             if (frames != null && frames.Count > 0)
                 await _viewModel.InitializeAsync(frames);
         };

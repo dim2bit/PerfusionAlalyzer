@@ -1,5 +1,4 @@
-﻿using Dicom;
-using Dicom.Imaging;
+﻿using Dicom.Imaging;
 using PerfusionAnalyzer.Core.Services;
 using PerfusionAnalyzer.Commands;
 using System.Collections.ObjectModel;
@@ -7,14 +6,18 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Input;
 using PerfusionAnalyzer.Core.Dicom;
+using Dicom;
 
 namespace PerfusionAnalyzer.ViewModels;
 
 public class FramesViewModel : INotifyPropertyChanged
 {
     private string _statusMessage = "Завантажте файли";
-    private int _currentIndex = 0;
-    private ObservableCollection<DicomImage> _dicomFrames = new();
+
+    private int _currentFrameIndex = 0;
+    private int _currentSliceIndex = 0;
+
+    private ObservableCollection<ObservableCollection<DicomImage>> _slices = new();
 
     private double[] _timePoints;
 
@@ -24,8 +27,6 @@ public class FramesViewModel : INotifyPropertyChanged
     public FramesViewModel()
     {
         LoadDicomFilesCommand = new RelayCommand(_ => LoadDicomFiles());
-        NextFrameCommand = new RelayCommand(_ => NextFrame(), _ => _dicomFrames.Count > 1);
-        PrevFrameCommand = new RelayCommand(_ => PrevFrame(), _ => _dicomFrames.Count > 1);
     }
 
     public string StatusMessage
@@ -42,12 +43,18 @@ public class FramesViewModel : INotifyPropertyChanged
     }
 
     public DicomImage? CurrentDicomFrame =>
-        _dicomFrames.Count > 0 ? _dicomFrames[_currentIndex] : null;
+        _slices.Count > 0 && _slices[_currentSliceIndex].Count > 0 ? _slices[_currentSliceIndex][_currentFrameIndex] : null;
 
-    public string FrameInfo =>
-        _dicomFrames.Count > 0 ? $"Кадр {_currentIndex + 1} із {_dicomFrames.Count}" : "Немає кадрів";
+    public string FrameInfo => _slices.Count > 0 && _slices[_currentSliceIndex].Count > 0 
+        ? $"Кадр {_currentFrameIndex + 1} із {_slices[_currentSliceIndex].Count}" 
+        : "Немає кадрів";
 
-    public int MaxFrameIndex => _dicomFrames.Count > 0 ? _dicomFrames.Count - 1 : 0;
+    public string SliceInfo => _slices.Count > 0
+        ? $"Зріз {_currentSliceIndex + 1} із {_slices.Count}"
+        : "Немає зрізів";
+
+    public int MaxFrameIndex => _slices.Count > 0 && _slices[_currentSliceIndex].Count > 0 ? _slices[_currentSliceIndex].Count - 1 : 0;
+    public int MaxSliceIndex => _slices.Count > 0 ? _slices.Count - 1 : 0;
 
     public string CurrentFrameTimeDisplay =>
         (_timePoints != null && !_timePoints.Any(t => t < 0) && CurrentFrameIndex >= 0 && CurrentFrameIndex < _timePoints.Length)
@@ -56,15 +63,44 @@ public class FramesViewModel : INotifyPropertyChanged
 
     public int CurrentFrameIndex
     {
-        get => _currentIndex;
+        get => _currentFrameIndex;
         set
         {
-            if (value != _currentIndex && value >= 0 && value < _dicomFrames.Count)
+            if (value != _currentFrameIndex && value >= 0 && value < _slices[_currentSliceIndex].Count)
             {
-                _currentIndex = value;
+                _currentFrameIndex = value;
                 OnPropertyChanged(nameof(CurrentFrameIndex));
+                OnPropertyChanged(nameof(CurrentSliceIndex));
                 OnPropertyChanged(nameof(CurrentDicomFrame));
                 OnPropertyChanged(nameof(FrameInfo));
+                OnPropertyChanged(nameof(SliceInfo));
+                OnPropertyChanged(nameof(MaxFrameIndex));
+                OnPropertyChanged(nameof(MaxSliceIndex));
+                OnPropertyChanged(nameof(CurrentFrameTimeDisplay));
+                FrameChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    public int CurrentSliceIndex
+    {
+        get => _currentSliceIndex;
+        set
+        {
+            if (value != _currentSliceIndex && value >= 0 && value < _slices.Count)
+            {
+                _currentSliceIndex = value;
+                _currentFrameIndex = 0;
+                _timePoints = DicomUtils.GetTimePoints(_slices[_currentSliceIndex].ToList());
+                DicomStorage.Instance.SetSlice(_currentSliceIndex);
+
+                OnPropertyChanged(nameof(CurrentFrameIndex));
+                OnPropertyChanged(nameof(CurrentSliceIndex));
+                OnPropertyChanged(nameof(CurrentDicomFrame));
+                OnPropertyChanged(nameof(FrameInfo));
+                OnPropertyChanged(nameof(SliceInfo));
+                OnPropertyChanged(nameof(MaxFrameIndex));
+                OnPropertyChanged(nameof(MaxSliceIndex));
                 OnPropertyChanged(nameof(CurrentFrameTimeDisplay));
                 FrameChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -72,24 +108,29 @@ public class FramesViewModel : INotifyPropertyChanged
     }
 
     public ICommand LoadDicomFilesCommand { get; }
-    public ICommand NextFrameCommand { get; }
-    public ICommand PrevFrameCommand { get; }
 
     public void LoadFrames()
     {
-        var images = DicomStorage.Instance.Images;
+        _slices = new ObservableCollection<ObservableCollection<DicomImage>>(
+            DicomStorage.Instance.AllSlices!.Select(sliceList => new ObservableCollection<DicomImage>(sliceList))
+        );
 
-        if (images == null || images.Count == 0)
+        if (_slices == null || _slices.Count == 0)
             return;
 
-        _dicomFrames = new ObservableCollection<DicomImage>(images);
-        _timePoints = DicomUtils.GetTimePoints(images);
-        _currentIndex = 0;
+        _currentFrameIndex = 0;
+        _currentSliceIndex = 0;
 
+        _timePoints = DicomUtils.GetTimePoints(_slices[_currentSliceIndex].ToList());
+        DicomStorage.Instance.SetSlice(_currentSliceIndex);
+
+        OnPropertyChanged(nameof(CurrentFrameIndex));
+        OnPropertyChanged(nameof(CurrentSliceIndex));
         OnPropertyChanged(nameof(CurrentDicomFrame));
         OnPropertyChanged(nameof(FrameInfo));
-        OnPropertyChanged(nameof(CurrentFrameIndex));
+        OnPropertyChanged(nameof(SliceInfo));
         OnPropertyChanged(nameof(MaxFrameIndex));
+        OnPropertyChanged(nameof(MaxSliceIndex));
         OnPropertyChanged(nameof(CurrentFrameTimeDisplay));
 
         FrameChanged?.Invoke(this, EventArgs.Empty);
@@ -114,7 +155,7 @@ public class FramesViewModel : INotifyPropertyChanged
 
                 StatusMessage = $"Завантажено файлів: {images.Count}";
 
-                DicomStorage.Instance.SetImages(images);
+                DicomStorage.Instance.LoadFrames(images);
 
                 FilesLoaded?.Invoke(this, EventArgs.Empty);
             }
@@ -123,32 +164,6 @@ public class FramesViewModel : INotifyPropertyChanged
                 System.Windows.MessageBox.Show(
                     $"Помилка при завантаженні файлів:\n{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
             }
-        }
-    }
-
-    private void NextFrame()
-    {
-        if (_currentIndex < _dicomFrames.Count - 1)
-        {
-            _currentIndex++;
-            OnPropertyChanged(nameof(CurrentFrameIndex));
-            OnPropertyChanged(nameof(CurrentDicomFrame));
-            OnPropertyChanged(nameof(FrameInfo));
-            OnPropertyChanged(nameof(CurrentFrameTimeDisplay));
-            FrameChanged?.Invoke(this, EventArgs.Empty);
-        }
-    }
-
-    private void PrevFrame()
-    {
-        if (_currentIndex > 0)
-        {
-            _currentIndex--;
-            OnPropertyChanged(nameof(CurrentFrameIndex));
-            OnPropertyChanged(nameof(CurrentDicomFrame));
-            OnPropertyChanged(nameof(FrameInfo));
-            OnPropertyChanged(nameof(CurrentFrameTimeDisplay));
-            FrameChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 

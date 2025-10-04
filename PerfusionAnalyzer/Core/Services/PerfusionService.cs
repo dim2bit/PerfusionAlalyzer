@@ -2,6 +2,7 @@
 using PerfusionAnalyzer.Core.Dicom;
 using PerfusionAnalyzer.Core.Filters;
 using PerfusionAnalyzer.Core.Math;
+using PerfusionAnalyzer.Core.Utils;
 using PerfusionAnalyzer.Models;
 
 namespace PerfusionAnalyzer.Core.Services;
@@ -9,9 +10,10 @@ namespace PerfusionAnalyzer.Core.Services;
 public class PerfusionService
 {
     private const int _interpolationStepsPerInterval = 10;
+    private const double _contrastRecirculationPercent = 50;
 
     private readonly double _TE_seconds;
-    private readonly int _baselineCount = 5;
+    private readonly int _baselineCount = 3;
 
     private readonly int _height;
     private readonly int _width;
@@ -44,18 +46,18 @@ public class PerfusionService
         _baselineCount = System.Math.Min(_baselineCount, _frames.Count);
     }
 
-    public async Task<PerfusionMetrics> CalculateMetricsAsync()
+    public async Task<PerfusionMetrics> CalculateMetricsAsync(ProcessingSettings settings)
     {
         return await Task.Run(() =>
         {
             double[] intensityCurve = _ushortFrames.Select(
                 frame => frame.Average(p => (double)p)).ToArray();
 
-            return CalculateMetricsFromCurve(intensityCurve);
+            return CalculateMetricsFromCurve(intensityCurve, settings);
         });
     }
 
-    public async Task<PerfusionMaps> CalculateMapsAsync()
+    public async Task<PerfusionMaps> CalculateMapsAsync(ProcessingSettings settings)
     {
         return await Task.Run(() =>
         {
@@ -72,7 +74,7 @@ public class PerfusionService
                     double[] intensityCurve = _ushortFrames.Select(
                         frame => (double)frame[y * _width + x]).ToArray();
 
-                    var metrics = CalculateMetricsFromCurve(intensityCurve);
+                    var metrics = CalculateMetricsFromCurve(intensityCurve, settings);
 
                     maps.AUCMap[y, x] = metrics.AUC;
                     maps.MTTMap[y, x] = metrics.MTT;
@@ -84,9 +86,9 @@ public class PerfusionService
         });
     }
 
-    public async Task<PerfusionMaps> PostProcessMapsAsync(PerfusionMaps originalMaps, PostProcessingSettings settings)
+    public async Task<PerfusionMaps> PostProcessMapsAsync(PerfusionMaps originalMaps, ProcessingSettings settings)
     {
-        bool[,] mask = DicomUtils.CreateMask(_ushortFrames[0], _width, _height, settings.Threshold);
+        bool[,] mask = DicomUtils.CreateMask(_ushortFrames[0], _width, _height, settings.BackgroundThreshold);
 
         var aucTask = PostProcessMapAsync(originalMaps.AUCMap, mask, settings);
         var mttTask = PostProcessMapAsync(originalMaps.MTTMap, mask, settings);
@@ -102,7 +104,7 @@ public class PerfusionService
         };
     }
 
-    private PerfusionMetrics CalculateMetricsFromCurve(double[] intensityCurve)
+    private PerfusionMetrics CalculateMetricsFromCurve(double[] intensityCurve, ProcessingSettings settings)
     {
         var metrics = new PerfusionMetrics();
 
@@ -117,40 +119,66 @@ public class PerfusionService
                 concentrationCurve[f] = -1.0 / _TE_seconds * System.Math.Log(intensityCurve[f] / S0);
         }
 
-        double[] filteredCurve = SignalFilter.ApplyGaussianFilter(concentrationCurve);
+        double[] filteredCurve = ApplyFilter(concentrationCurve, settings.FilterType);
 
-        var spline = SplineInterpolator.GetSpline(_timePoints, filteredCurve);
-        double[] interpolatedCurve = SplineInterpolator.InterpolateCurve(spline, _denseTimePoints);
+        var (timeSlice, curveSlice) = ExtractContrastCurve(
+            _timePoints, filteredCurve, settings.ContrastArrivalPercent, _contrastRecirculationPercent);
 
-        metrics.AUC = (float)PerfusionCalculator.CalculateAUC(_denseTimePoints, interpolatedCurve);
-        metrics.MTT = System.Math.Clamp((float)PerfusionCalculator.CalculateMTT(_denseTimePoints, interpolatedCurve), 0, 50);
-        metrics.TTP = (float)PerfusionCalculator.CalculateTTP(_denseTimePoints, interpolatedCurve);
+        metrics.AUC = (float)PerfusionCalculator.CalculateAUC_Combined(timeSlice, curveSlice);
+        metrics.MTT = System.Math.Clamp((float)PerfusionCalculator.CalculateMTT(timeSlice, curveSlice), 0, 50);
+        metrics.TTP = (float)PerfusionCalculator.CalculateTTP(timeSlice, curveSlice);
 
-        metrics.TimePoints = _denseTimePoints;
-        metrics.ConcentrationPoints = interpolatedCurve;
+        metrics.TimePoints = _timePoints;
+        metrics.ConcentrationPoints = filteredCurve;
+
+        metrics.SlicedTimePoints = timeSlice;
+        metrics.SlicedConcentrationPoints = curveSlice;
 
         return metrics;
     }
 
-    private async Task<float[,]> PostProcessMapAsync(float[,] map, bool[,] mask, PostProcessingSettings settings)
+    private (double[] Time, double[] Curve) ExtractContrastCurve(
+        double[] timePoints,
+        double[] curve,
+        double contrastArrivalPercent,
+        double contrastRecirculationPercent)
     {
-        return await Task.Run(() =>
+        double peak = curve.Max();
+        int peakIndex = Array.IndexOf(curve, peak);
+
+        double thresholdStart = contrastArrivalPercent / 100.0 * peak;
+        double thresholdReCirc = contrastRecirculationPercent / 100.0 * peak;
+
+        double? tStart = CurveUtils.FindThresholdTime(timePoints, curve, thresholdStart, rising: true);
+        double? tEnd = CurveUtils.FindThresholdTime(timePoints, curve, thresholdReCirc, rising: false, startIndex: peakIndex);
+
+        if (tStart == null || tEnd == null || tStart >= tEnd)
         {
-            var filtered = ApplyFilter(map, mask, settings.FilterType, settings.KernelSize);
-            SignalFilter.ApplyGammaCorrection(filtered, mask, settings.Gamma);
-            return filtered;
-        });
+            tStart = timePoints.First();
+            tEnd = timePoints.Last();
+        }
+
+        return CurveUtils.CutCurveBetweenThresholds(timePoints, curve, tStart.Value, tEnd.Value);
     }
 
-    private float[,] ApplyFilter(float[,] map, bool[,] mask, FilterType filterType, int kernelSize)
+    private double[] ApplyFilter(double[] concentrationCurve, FilterType filterType)
     {
         return filterType switch
         {
-            FilterType.Median => SignalFilter.ApplyMaskedMedianFilter(map, mask, kernelSize),
-            FilterType.Gaussian => SignalFilter.ApplyMaskedGaussianFilter(map, mask, kernelSize),
-            FilterType.Bilateral => SignalFilter.ApplyMaskedBilateralFilter(map, mask, kernelSize),
-            FilterType.None => (float[,])map.Clone(),
-            _ => throw new ArgumentOutOfRangeException(nameof(filterType), filterType, null)
+            FilterType.Gaussian => SignalFilter.ApplyGaussianFilter(concentrationCurve),
+            FilterType.MovingAverage => SignalFilter.ApplyMovingAverage(concentrationCurve),
+            FilterType.None => (double[])concentrationCurve.Clone(),
+            _ => throw new ArgumentException("Невідомий тип фільтрації")
         };
+    }
+
+    private async Task<float[,]> PostProcessMapAsync(float[,] map, bool[,] mask, ProcessingSettings settings)
+    {
+        return await Task.Run(() =>
+        {
+            var mapCopy = (float[,])map.Clone();
+            SignalFilter.ApplyGammaCorrection(mapCopy, mask, settings.Gamma);
+            return mapCopy;
+        });
     }
 }

@@ -2,7 +2,37 @@
 
 public static class PerfusionCalculator
 {
-    public static double CalculateAUC(double[] timePoints, double[] concentrationPoints)
+    public static double CalculateAUC_Rect(double[] timePoints, double[] concentrationPoints)
+    {
+        double auc = 0;
+        for (int i = 1; i < timePoints.Length; i++)
+        {
+            double dt = timePoints[i] - timePoints[i - 1];
+            auc += concentrationPoints[i - 1] * dt;
+        }
+        return auc;
+    }
+
+    public static double CalculateAUC_Trapezoid(double[] timePoints, double[] concentrationPoints)
+    {
+        double auc = 0;
+        for (int i = 1; i < timePoints.Length; i++)
+        {
+            double dt = timePoints[i] - timePoints[i - 1];
+            double avgHeight = (concentrationPoints[i] + concentrationPoints[i - 1]) / 2.0;
+            auc += avgHeight * dt;
+        }
+        return auc;
+    }
+
+    public static double CalculateAUC_Combined(double[] timePoints, double[] concentrationPoints, double alpha = 0.5)
+    {
+        double rect = CalculateAUC_Rect(timePoints, concentrationPoints);
+        double trap = CalculateAUC_Trapezoid(timePoints, concentrationPoints);
+        return alpha * rect + (1 - alpha) * trap;
+    }
+
+    public static double CalculateAUC_Parabolic(double[] timePoints, double[] concentrationPoints)
     {
         int n = timePoints.Length;
 
@@ -35,7 +65,7 @@ public static class PerfusionCalculator
 
     public static double CalculateMTT(double[] timePoints, double[] concentrationPoints)
     {
-        double auc = CalculateAUC(timePoints, concentrationPoints);
+        double auc = CalculateAUC_Combined(timePoints, concentrationPoints);
         if (auc == 0) return 0;
 
         double weightedSum = 0;

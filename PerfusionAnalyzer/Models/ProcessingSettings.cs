@@ -2,8 +2,8 @@
 
 public class ProcessingSettings
 {
+    public FilterType FilterType { get; set; } = FilterType.Gaussian;
     public double Gamma { get; set; } = 0.25;
-    public int KernelSize { get; set; } = 3;
-    public ushort Threshold { get; set; } = 75;
-    public bool IsPostProcessingEnabled { get; set; } = true;
+    public ushort BackgroundThreshold { get; set; } = 75;
+    public int ContrastArrivalPercent { get; set; } = 10;
 }

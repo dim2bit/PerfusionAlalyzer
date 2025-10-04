@@ -1,4 +1,5 @@
-﻿using Dicom.Imaging;
+﻿using Dicom;
+using Dicom.Imaging;
 using PerfusionAnalyzer.Core.Dicom;
 
 namespace PerfusionAnalyzer.Core.Services;
@@ -8,17 +9,39 @@ public class DicomStorage
     private static DicomStorage? _instance;
     public static DicomStorage Instance => _instance ??= new DicomStorage();
 
-    private List<DicomImage>? _dicomImages;
+    private int _sliceIndex;
+    private List<List<DicomImage>>? _slices = new();
 
     private DicomStorage() { }
 
-    public List<DicomImage>? Images => _dicomImages;
+    public List<List<DicomImage>>? AllSlices => _slices;
+    public List<DicomImage>? CurrentSlice => _slices.Count > 0 ? _slices[_sliceIndex] : null;
 
-    public event EventHandler? ImagesUpdated;
+    public event EventHandler? SliceUpdated;
 
-    public void SetImages(List<DicomImage> images)
+    public void LoadFrames(List<DicomImage> frames)
     {
-        _dicomImages = images.OrderBy(DicomUtils.GetTriggerTime).ToList();
-        ImagesUpdated?.Invoke(this, EventArgs.Empty);
+        _sliceIndex = 0;
+        var orderedFrames = frames.OrderBy(DicomUtils.GetTriggerTime).ToList();
+
+        _slices.Clear();
+
+        var groups = orderedFrames.GroupBy(img =>
+        {
+            var sliceLocation = img.Dataset.Get<double?>(DicomTag.SliceLocation);
+            return sliceLocation ?? double.NaN;
+        });
+
+        foreach (var group in groups.OrderBy(g => g.Key))
+        {
+            var slice = new List<DicomImage>(group);
+            _slices.Add(slice);
+        }
+    }
+
+    public void SetSlice(int sliceIndex)
+    {
+        _sliceIndex = sliceIndex;
+        SliceUpdated?.Invoke(this, EventArgs.Empty);
     }
 }
