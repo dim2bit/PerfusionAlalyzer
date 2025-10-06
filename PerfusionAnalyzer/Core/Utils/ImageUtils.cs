@@ -33,25 +33,7 @@ public static class ImageUtils
                 float val = map[y, x];
                 float normVal = (val - min) / range;
 
-                Color color;
-
-                switch (descriptorType)
-                {
-                    case DescriptorType.AUC:
-                        color = PerfusionColorMapsUtils.GetAUCColor(val, min, max);
-                        break;
-                    case DescriptorType.MTT:
-                        color = PerfusionColorMapsUtils.GetMTTColor(val, min, max);
-                        break;
-                    case DescriptorType.TTP:
-                        color = PerfusionColorMapsUtils.GetTTPColor(val, min, max);
-                        break;
-                    default:
-                        int gray = (int)(normVal * 255);
-                        gray = System.Math.Clamp(gray, 0, 255);
-                        color = Color.FromArgb(255, gray, gray, gray);
-                        break;
-                }
+                Color color = ColorUtils.GetViridisColor(val, min, max);
 
                 bmp.SetPixel(x, height - y - 1, color);
             }

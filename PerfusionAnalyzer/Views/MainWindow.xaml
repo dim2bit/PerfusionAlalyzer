@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:PerfusionAnalyzer"
         xmlns:views="clr-namespace:PerfusionAnalyzer.Views"
         mc:Ignorable="d"
-        Title="Розрахунок перфузійних параметрів" Height="496" Width="800" ResizeMode="NoResize">
+        Title="Розрахунок перфузійних параметрів" Height="600" Width="1000" ResizeMode="NoResize">
     <Grid>
         <TabControl>
             <TabItem Header="Перегляд кадрів">

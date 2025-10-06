@@ -21,32 +21,54 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <StackPanel Orientation="Vertical" Grid.Row="0" Margin="0,0,20,15" MaxHeight="180" IsEnabled="{Binding IsDataLoaded}">
+            <StackPanel Orientation="Vertical" Grid.Row="0" Margin="0,0,20,15" MaxHeight="220" IsEnabled="{Binding IsDataLoaded}">
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
-                    <TextBlock Text="Фільтр:" Width="80" VerticalAlignment="Center" FontSize="13"/>
+                    <TextBlock Text="Тип кривої:" Width="120" VerticalAlignment="Center" FontSize="13"/>
+                    <ComboBox
+                        ItemsSource="{Binding AvailableCurveTypes}"
+                        SelectedValue="{Binding SelectedCurveType, Mode=TwoWay}"
+                        SelectedValuePath="Value"
+                        DisplayMemberPath="DisplayName"
+                        Width="180"
+                        Height="25"
+                        FontSize="13"
+                        Margin="20,0,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
+                    <TextBlock Text="Фільтр:" Width="120" VerticalAlignment="Center" FontSize="13"/>
                     <ComboBox
                         ItemsSource="{Binding AvailableFilters}"
                         SelectedValue="{Binding SelectedFilter, Mode=TwoWay}"
                         SelectedValuePath="Value"
                         DisplayMemberPath="DisplayName"
-                        Width="180" Height="25" FontSize="13" />
+                        Width="180" 
+                        Height="25" 
+                        FontSize="13"
+                        Margin="20,0,0,0"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
-                    <TextBlock Text="Момент часу надходження контрасту, %:" Width="80" VerticalAlignment="Center" FontSize="13"/>
-                    <Slider Minimum="10" Maximum="30" Value="{Binding ContrastArrivalPercent, Mode=TwoWay}" Width="180" Height="20"/>
+                    <TextBlock Text="Коеф. витоку:" Width="120" VerticalAlignment="Center" FontSize="13"/>
+                    <Slider Minimum="0" Maximum="0.015" Value="{Binding LeakageCoefficient, Mode=TwoWay}" Width="180" Height="20" Margin="20,0,0,0"/>
+                    <TextBlock Text="{Binding LeakageCoefficient, StringFormat=F4}" Width="50" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
+                    <TextBlock Text="Надходження, %" Width="120" VerticalAlignment="Center" FontSize="13"/>
+                    <Slider Minimum="10" Maximum="30" Value="{Binding ContrastArrivalPercent, Mode=TwoWay}" Width="180" Height="20" Margin="20,0,0,0"/>
                     <TextBlock Text="{Binding ContrastArrivalPercent}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
-                    <TextBlock Text="Гама:" Width="80" VerticalAlignment="Center" FontSize="13"/>
-                    <Slider Minimum="0.1" Maximum="2.0" Value="{Binding Gamma, Mode=TwoWay}" Width="180" Height="20"/>
+                    <TextBlock Text="Гама:" Width="120" VerticalAlignment="Center" FontSize="13"/>
+                    <Slider Minimum="0.1" Maximum="2.0" Value="{Binding Gamma, Mode=TwoWay}" Width="180" Height="20" Margin="20,0,0,0"/>
                     <TextBlock Text="{Binding Gamma, StringFormat=F2}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,6">
-                    <TextBlock Text="Поріг маски:" Width="80" VerticalAlignment="Center" FontSize="13"/>
-                    <Slider Minimum="0" Maximum="255" Value="{Binding BackgroundThreshold, Mode=TwoWay}" Width="180" Height="20" />
+                    <TextBlock Text="Поріг маски:" Width="120" VerticalAlignment="Center" FontSize="13"/>
+                    <Slider Minimum="0" Maximum="255" Value="{Binding BackgroundThreshold, Mode=TwoWay}" Width="180" Height="20" Margin="20,0,0,0"/>
                     <TextBlock Text="{Binding BackgroundThreshold}" Width="40" FontSize="13" HorizontalAlignment="Right" Margin="10,0,0,0"/>
                 </StackPanel>
             </StackPanel>
@@ -71,7 +93,7 @@
                     Model="{Binding PerfusionPlotModel}"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Stretch"
-                    Height="250" />
+                    Height="300" />
             </StackPanel>
         </Grid>
 

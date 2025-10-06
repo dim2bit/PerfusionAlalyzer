@@ -3,5 +3,5 @@
 public class ComboBoxItem
 {
     public string DisplayName { get; set; }
-    public FilterType Value { get; set; }
+    public object Value { get; set; }
 }

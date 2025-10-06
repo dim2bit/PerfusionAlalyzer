@@ -23,6 +23,12 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
     private PerfusionService _perfusionService;
 
+    public ObservableCollection<ComboBoxItem> AvailableCurveTypes { get; } = new ObservableCollection<ComboBoxItem>
+    {
+        new ComboBoxItem { DisplayName = "Інтенсивність", Value = CurveType.Intensity },
+        new ComboBoxItem { DisplayName = "Концентрація", Value = CurveType.Concentration }
+    };
+
     public ObservableCollection<ComboBoxItem> AvailableFilters { get; } = new ObservableCollection<ComboBoxItem>
     {
         new ComboBoxItem { DisplayName = "Не фільтрується", Value = FilterType.None },
@@ -47,6 +53,19 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             {
                 _perfusionPlotModel = value;
                 OnPropertyChanged(nameof(PerfusionPlotModel));
+            }
+        }
+    }
+
+    public CurveType SelectedCurveType
+    {
+        get => _processingSettings.CurveType;
+        set
+        {
+            if (_processingSettings.CurveType != value)
+            {
+                _processingSettings.CurveType = value;
+                OnPropertyChanged(nameof(SelectedFilter));
             }
         }
     }
@@ -159,6 +178,19 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
+    public double LeakageCoefficient
+    {
+        get => _processingSettings.LeakageCoefficient;
+        set
+        {
+            if (_processingSettings.LeakageCoefficient != value)
+            {
+                _processingSettings.LeakageCoefficient = value;
+                OnPropertyChanged(nameof(LeakageCoefficient));
+            }
+        }
+    }
+
     public int ContrastArrivalPercent
     {
         get => _processingSettings.ContrastArrivalPercent;
@@ -248,8 +280,8 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
             await PostProcessMapsAsync();
 
-            BuildPlot(perfusionMetrics.TimePoints, perfusionMetrics.ConcentrationPoints,
-                perfusionMetrics.SlicedTimePoints, perfusionMetrics.SlicedConcentrationPoints);
+            BuildPlot(perfusionMetrics.Time, perfusionMetrics.Curve,
+                perfusionMetrics.SlicedTime, perfusionMetrics.SlicedCurve);
 
             IsDataLoaded = true;
 
@@ -325,8 +357,8 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
     }
 
     private void BuildPlot(
-        double[] timePoints, double[] concentrationPoints,
-        double[] slicedTimePoints, double[] slicedConcentrationPoints)
+        double[] time, double[] curve,
+        double[] slicedTime, double[] slicedCurve)
     {
         var plotModel = new PlotModel
         {
@@ -352,9 +384,9 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             MarkerType = MarkerType.None
         };
 
-        for (int i = 0; i < timePoints.Length; i++)
+        for (int i = 0; i < time.Length; i++)
         {
-            fullSeries.Points.Add(new DataPoint(timePoints[i], concentrationPoints[i]));
+            fullSeries.Points.Add(new DataPoint(time[i], curve[i]));
         }
 
         var cutSeries = new LineSeries
@@ -367,9 +399,9 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             MarkerFill = OxyColors.White
         };
 
-        for (int i = 0; i < slicedTimePoints.Length; i++)
+        for (int i = 0; i < slicedTime.Length; i++)
         {
-            cutSeries.Points.Add(new DataPoint(slicedTimePoints[i], slicedConcentrationPoints[i]));
+            cutSeries.Points.Add(new DataPoint(slicedTime[i], slicedCurve[i]));
         }
 
         plotModel.Series.Add(fullSeries);

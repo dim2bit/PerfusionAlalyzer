@@ -36,7 +36,9 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
             {
                 _needUpdateTexture = true;
             }
-            else if (e.PropertyName == nameof(_viewModel.SelectedFilter) ||
+            else if (e.PropertyName == nameof(_viewModel.LeakageCoefficient) ||
+                e.PropertyName == nameof(_viewModel.SelectedCurveType) ||
+                e.PropertyName == nameof(_viewModel.SelectedFilter) ||
                 e.PropertyName == nameof(_viewModel.ContrastArrivalPercent))
             {
                 var frames = DicomStorage.Instance.CurrentSlice;

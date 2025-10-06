@@ -19,7 +19,7 @@ public class FramesViewModel : INotifyPropertyChanged
 
     private ObservableCollection<ObservableCollection<DicomImage>> _slices = new();
 
-    private double[] _timePoints;
+    private double[] _time;
 
     public event EventHandler? FilesLoaded;
     public event EventHandler? FrameChanged;
@@ -57,8 +57,8 @@ public class FramesViewModel : INotifyPropertyChanged
     public int MaxSliceIndex => _slices.Count > 0 ? _slices.Count - 1 : 0;
 
     public string CurrentFrameTimeDisplay =>
-        (_timePoints != null && !_timePoints.Any(t => t < 0) && CurrentFrameIndex >= 0 && CurrentFrameIndex < _timePoints.Length)
-            ? $"Час: {_timePoints[CurrentFrameIndex]:F2} с"
+        (_time != null && !_time.Any(t => t < 0) && CurrentFrameIndex >= 0 && CurrentFrameIndex < _time.Length)
+            ? $"Час: {_time[CurrentFrameIndex]:F2} с"
             : "";
 
     public int CurrentFrameIndex
@@ -91,7 +91,7 @@ public class FramesViewModel : INotifyPropertyChanged
             {
                 _currentSliceIndex = value;
                 _currentFrameIndex = 0;
-                _timePoints = DicomUtils.GetTimePoints(_slices[_currentSliceIndex].ToList());
+                _time = DicomUtils.GetTimePoints(_slices[_currentSliceIndex].ToList());
                 DicomStorage.Instance.SetSlice(_currentSliceIndex);
 
                 OnPropertyChanged(nameof(CurrentFrameIndex));
@@ -121,7 +121,7 @@ public class FramesViewModel : INotifyPropertyChanged
         _currentFrameIndex = 0;
         _currentSliceIndex = 0;
 
-        _timePoints = DicomUtils.GetTimePoints(_slices[_currentSliceIndex].ToList());
+        _time = DicomUtils.GetTimePoints(_slices[_currentSliceIndex].ToList());
         DicomStorage.Instance.SetSlice(_currentSliceIndex);
 
         OnPropertyChanged(nameof(CurrentFrameIndex));

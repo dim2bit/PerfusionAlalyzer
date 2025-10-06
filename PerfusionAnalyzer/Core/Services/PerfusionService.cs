@@ -19,28 +19,26 @@ public class PerfusionService
     private readonly int _width;
     private readonly List<DicomImage> _frames;
     private readonly ushort[][] _ushortFrames;
-    private readonly double[] _timePoints;
-    private readonly double[] _denseTimePoints;
+    private readonly double[] _time;
 
     public PerfusionService(List<DicomImage> frames)
     {
         if (frames == null || frames.Count == 0)
             throw new InvalidOperationException("Немає завантажених зображень для обробки.");
 
-        var timePoints = DicomUtils.GetTimePoints(frames);
+        var time = DicomUtils.GetTimePoints(frames);
 
-        if (timePoints.Any(t => t < 0))
+        if (time.Any(t => t < 0))
             throw new InvalidOperationException("Одне або кілька зображень не містять часу зйомки (TriggerTime).");
 
-        if (timePoints.Distinct().Count() <= 1)
+        if (time.Distinct().Count() <= 1)
             throw new InvalidOperationException("Недостатньо різних часових точок для аналізу. Всі кадри мають однаковий час.");
 
         _height = frames[0].Height;
         _width = frames[0].Width;
 
         _frames = frames;
-        _timePoints = timePoints;
-        _denseTimePoints = SplineInterpolator.GetTimePoints(_timePoints, _interpolationStepsPerInterval);
+        _time = time;
         _ushortFrames = DicomUtils.FramesToUshort(frames, _width, _height);
         _TE_seconds = DicomUtils.GetEchoTime(_frames[0]);
         _baselineCount = System.Math.Min(_baselineCount, _frames.Count);
@@ -107,67 +105,53 @@ public class PerfusionService
     private PerfusionMetrics CalculateMetricsFromCurve(double[] intensityCurve, ProcessingSettings settings)
     {
         var metrics = new PerfusionMetrics();
+        double[] curve = new double[_frames.Count];
 
-        double S0 = intensityCurve.Take(_baselineCount).Average();
-
-        double[] concentrationCurve = new double[_frames.Count];
-        for (int f = 0; f < _frames.Count; f++)
+        if (settings.CurveType == CurveType.Concentration)
         {
-            if (intensityCurve[f] <= 0 || S0 <= 0)
-                concentrationCurve[f] = 0;
-            else
-                concentrationCurve[f] = -1.0 / _TE_seconds * System.Math.Log(intensityCurve[f] / S0);
+            double S0 = intensityCurve.Take(_baselineCount).Average();
+            for (int f = 0; f < _frames.Count; f++)
+            {
+                if (intensityCurve[f] <= 0 || S0 <= 0)
+                    curve[f] = 0;
+                else
+                    curve[f] = -1.0 / _TE_seconds * System.Math.Log(intensityCurve[f] / S0);
+            }
+        }
+        else
+        {
+            curve = (double[])intensityCurve.Clone();
         }
 
-        double[] filteredCurve = ApplyFilter(concentrationCurve, settings.FilterType);
+        double[] filteredCurve = ApplyFilter(curve, settings.FilterType);
 
-        var (timeSlice, curveSlice) = ExtractContrastCurve(
-            _timePoints, filteredCurve, settings.ContrastArrivalPercent, _contrastRecirculationPercent);
+        filteredCurve = CurveUtils.ApplyLeakageCorrection(_time, filteredCurve, settings.LeakageCoefficient);
 
-        metrics.AUC = (float)PerfusionCalculator.CalculateAUC_Combined(timeSlice, curveSlice);
-        metrics.MTT = System.Math.Clamp((float)PerfusionCalculator.CalculateMTT(timeSlice, curveSlice), 0, 50);
-        metrics.TTP = (float)PerfusionCalculator.CalculateTTP(timeSlice, curveSlice);
+        var (slicedTime, slicedCurve) = CurveUtils.ExtractContrastCurve(
+            _time, filteredCurve, settings.ContrastArrivalPercent, _contrastRecirculationPercent);
 
-        metrics.TimePoints = _timePoints;
-        metrics.ConcentrationPoints = filteredCurve;
+        //double[] fittedCurve = CurveUtils.FitGammaCurve(timeSlice, curveSlice);
 
-        metrics.SlicedTimePoints = timeSlice;
-        metrics.SlicedConcentrationPoints = curveSlice;
+        metrics.AUC = (float)PerfusionCalculator.CalculateAUC_Combined(slicedTime, slicedCurve);
+        metrics.MTT = System.Math.Clamp((float)PerfusionCalculator.CalculateMTT(slicedTime, slicedCurve), 0, 50);
+        metrics.TTP = (float)PerfusionCalculator.CalculateTTP(slicedTime, slicedCurve);
+
+        metrics.Time = _time;
+        metrics.Curve = filteredCurve;
+
+        metrics.SlicedTime = slicedTime;
+        metrics.SlicedCurve = slicedCurve;
 
         return metrics;
     }
 
-    private (double[] Time, double[] Curve) ExtractContrastCurve(
-        double[] timePoints,
-        double[] curve,
-        double contrastArrivalPercent,
-        double contrastRecirculationPercent)
-    {
-        double peak = curve.Max();
-        int peakIndex = Array.IndexOf(curve, peak);
-
-        double thresholdStart = contrastArrivalPercent / 100.0 * peak;
-        double thresholdReCirc = contrastRecirculationPercent / 100.0 * peak;
-
-        double? tStart = CurveUtils.FindThresholdTime(timePoints, curve, thresholdStart, rising: true);
-        double? tEnd = CurveUtils.FindThresholdTime(timePoints, curve, thresholdReCirc, rising: false, startIndex: peakIndex);
-
-        if (tStart == null || tEnd == null || tStart >= tEnd)
-        {
-            tStart = timePoints.First();
-            tEnd = timePoints.Last();
-        }
-
-        return CurveUtils.CutCurveBetweenThresholds(timePoints, curve, tStart.Value, tEnd.Value);
-    }
-
-    private double[] ApplyFilter(double[] concentrationCurve, FilterType filterType)
+    private double[] ApplyFilter(double[] curve, FilterType filterType)
     {
         return filterType switch
         {
-            FilterType.Gaussian => SignalFilter.ApplyGaussianFilter(concentrationCurve),
-            FilterType.MovingAverage => SignalFilter.ApplyMovingAverage(concentrationCurve),
-            FilterType.None => (double[])concentrationCurve.Clone(),
+            FilterType.Gaussian => SignalFilter.ApplyGaussianFilter(curve),
+            FilterType.MovingAverage => SignalFilter.ApplyMovingAverage(curve),
+            FilterType.None => (double[])curve.Clone(),
             _ => throw new ArgumentException("Невідомий тип фільтрації")
         };
     }

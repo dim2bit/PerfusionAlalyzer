@@ -156,23 +156,7 @@ public class DicomImageRenderer
                 float val = map[y, x];
                 float normVal = (val - min) / range;
 
-                Color color;
-                switch (descriptor)
-                {
-                    case DescriptorType.AUC:
-                        color = PerfusionColorMapsUtils.GetAUCColor(val, min, max);
-                        break;
-                    case DescriptorType.MTT:
-                        color = PerfusionColorMapsUtils.GetMTTColor(val, min, max);
-                        break;
-                    case DescriptorType.TTP:
-                        color = PerfusionColorMapsUtils.GetTTPColor(val, min, max);
-                        break;
-                    default:
-                        int gray = (int)(normVal * 255);
-                        color = Color.FromArgb(gray, gray, gray);
-                        break;
-                }
+                Color color = ColorUtils.GetViridisColor(val, min, max);
 
                 int idx = (y * width + x) * 3;
                 output[idx] = color.R;
