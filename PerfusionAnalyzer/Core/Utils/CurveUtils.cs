@@ -14,16 +14,24 @@ public class CurveUtils
         double thresholdStart = contrastArrivalPercent / 100.0 * peak;
         double thresholdReCirc = contrastRecirculationPercent / 100.0 * peak;
 
-        double? tStart = CurveUtils.FindThresholdTime(time, curve, thresholdStart, rising: true);
-        double? tEnd = CurveUtils.FindThresholdTime(time, curve, thresholdReCirc, rising: false, startIndex: peakIndex);
+        double? tStart = FindThresholdTime(time, curve, thresholdStart, rising: true);
+        double? tEnd = FindThresholdTime(time, curve, thresholdReCirc, rising: false, startIndex: peakIndex);
 
-        if (tStart == null || tEnd == null || tStart >= tEnd)
+        if (tStart == null)
+        {
+            tStart = time.First();
+        }
+        if (tEnd == null)
+        {
+            tEnd = time.Last();
+        }
+        if (tStart >= tEnd)
         {
             tStart = time.First();
             tEnd = time.Last();
         }
 
-        return CurveUtils.CutCurveBetweenThresholds(time, curve, tStart.Value, tEnd.Value);
+        return CutCurveBetweenThresholds(time, curve, tStart.Value, tEnd.Value);
     }
 
     public static double[] ApplyLeakageCorrection(double[] time, double[] curve, double leakageCoefficient)

@@ -22,7 +22,7 @@ public class DicomStorage
     public void LoadFrames(List<DicomImage> frames)
     {
         _sliceIndex = 0;
-        var orderedFrames = frames.OrderBy(DicomUtils.GetTriggerTime).ToList();
+        var orderedFrames = frames.OrderBy(DicomUtils.GetFrameTime).ToList();
 
         _slices.Clear();
 

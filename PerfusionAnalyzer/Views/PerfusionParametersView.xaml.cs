@@ -10,16 +10,20 @@ namespace PerfusionAnalyzer.Views;
 /// </summary>
 public partial class PerfusionParametersView : System.Windows.Controls.UserControl
 {
-    private readonly DicomImageRenderer _renderer;
+    private readonly DicomImageRenderer _mapRenderer;
+    private readonly DicomImageRenderer _externalMapRenderer;
+
     private readonly PerfusionParametersViewModel _viewModel;
 
-    private bool _needUpdateTexture = false;
+    private bool _updateMapTexture = false;
+    private bool _updateExternalMapTexture = false;
 
     public PerfusionParametersView()
     {
         InitializeComponent();
         _viewModel = new PerfusionParametersViewModel();
-        _renderer = new DicomImageRenderer();
+        _mapRenderer = new DicomImageRenderer();
+        _externalMapRenderer = new DicomImageRenderer();
         DataContext = _viewModel;
 
         var settings = new GLWpfControlSettings
@@ -28,15 +32,21 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
             MinorVersion = 2,
             GraphicsProfile = OpenTK.Windowing.Common.ContextProfile.Compatability
         };
-        OpenTkControl.Start(settings);
+        MapOpenTkControl.Start(settings);
+        ExternalMapOpenTkControl.Start(settings);
 
         _viewModel.PropertyChanged += async (_, e) =>
         {
             if (e.PropertyName == nameof(_viewModel.SelectedDescriptor))
             {
-                _needUpdateTexture = true;
+                _updateMapTexture = true;
             }
-            else if (e.PropertyName == nameof(_viewModel.LeakageCoefficient) ||
+            else if (e.PropertyName == nameof(_viewModel.ExternalMap))
+            {
+                _updateExternalMapTexture = true;
+            }
+            else if (e.PropertyName == nameof(_viewModel.Mask) ||
+                e.PropertyName == nameof(_viewModel.LeakageCoefficient) ||
                 e.PropertyName == nameof(_viewModel.SelectedCurveType) ||
                 e.PropertyName == nameof(_viewModel.SelectedFilter) ||
                 e.PropertyName == nameof(_viewModel.ContrastArrivalPercent))
@@ -45,11 +55,10 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
                 if (frames != null && frames.Count > 0)
                     await _viewModel.InitializeAsync(frames);
             }
-            else if (e.PropertyName == nameof(_viewModel.Gamma) ||
-                e.PropertyName == nameof(_viewModel.BackgroundThreshold))
+            else if (e.PropertyName == nameof(_viewModel.Gamma))
             {
                 await _viewModel.PostProcessMapsAsync();
-                _needUpdateTexture = true;
+                _updateMapTexture = true;
             }
         };
 
@@ -61,38 +70,59 @@ public partial class PerfusionParametersView : System.Windows.Controls.UserContr
         };
     }
 
-    private void OpenTkControl_OnRender(TimeSpan delta)
+    private void MapOpenTkControl_OnRender(TimeSpan delta)
     {
-        if (_renderer != null)
+        if (_mapRenderer != null)
         {
-            if (_needUpdateTexture)
+            if (_updateMapTexture)
             {
-                UpdateTexture();
-                _needUpdateTexture = false;
+                UpdateMapTexture();
+                _updateMapTexture = false;
             }
-            int controlWidth = (int)OpenTkControl.Width;
-            int controlHeight = (int)OpenTkControl.Height;
+            int controlWidth = (int)MapOpenTkControl.Width;
+            int controlHeight = (int)MapOpenTkControl.Height;
 
-            _renderer.Render(controlWidth, controlHeight);
+            _mapRenderer.Render(controlWidth, controlHeight);
         }
     }
 
-    private void UpdateTexture()
+    private void ExternalMapOpenTkControl_OnRender(TimeSpan delta)
+    {
+        if (_externalMapRenderer != null)
+        {
+            if (_updateExternalMapTexture)
+            {
+                UpdateExternalMapTexture();
+                _updateExternalMapTexture = false;
+            }
+            int controlWidth = (int)ExternalMapOpenTkControl.Width;
+            int controlHeight = (int)ExternalMapOpenTkControl.Height;
+
+            _externalMapRenderer.Render(controlWidth, controlHeight);
+        }
+    }
+
+    private void UpdateMapTexture()
     {
         switch (_viewModel.SelectedDescriptor)
         {
             case DescriptorType.AUC:
                 if (_viewModel.AUCMap != null)
-                    _renderer.LoadMapTextureColored(_viewModel.AUCMap, DescriptorType.AUC);
+                    _mapRenderer.LoadMapTextureColored(_viewModel.AUCMap);
                 break;
             case DescriptorType.MTT:
                 if (_viewModel.MTTMap != null)
-                    _renderer.LoadMapTextureColored(_viewModel.MTTMap, DescriptorType.MTT);
+                    _mapRenderer.LoadMapTextureColored(_viewModel.MTTMap);
                 break;
             case DescriptorType.TTP:
                 if (_viewModel.TTPMap != null)
-                    _renderer.LoadMapTextureColored(_viewModel.TTPMap, DescriptorType.TTP);
+                    _mapRenderer.LoadMapTextureColored(_viewModel.TTPMap);
                 break;
         }
+    }
+
+    private void UpdateExternalMapTexture()
+    {
+        _externalMapRenderer.LoadMapTextureColored(_viewModel.ExternalMap);
     }
 }

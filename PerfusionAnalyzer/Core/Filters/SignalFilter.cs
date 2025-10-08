@@ -96,19 +96,20 @@ public static class SignalFilter
         return result;
     }
 
-    public static void ApplyGammaCorrection(float[,] map, bool[,] mask, double gamma = 1.0)
+    public static void ApplyGammaCorrection(float[,] map, double gamma = 1.0)
     {
         int h = map.GetLength(0), w = map.GetLength(1);
         float min = float.MaxValue, max = float.MinValue;
 
         for (int y = 0; y < h; y++)
+        {
             for (int x = 0; x < w; x++)
-                if (mask[y, x])
-                {
-                    float val = map[y, x];
-                    if (val < min) min = val;
-                    if (val > max) max = val;
-                }
+            {
+                float val = map[y, x];
+                if (val < min) min = val;
+                if (val > max) max = val;
+            }
+        }
 
         float range = max - min;
         if (range < 1e-5f) return;
@@ -117,14 +118,8 @@ public static class SignalFilter
         {
             for (int x = 0; x < w; x++)
             {
-                if (!mask[y, x])
-                {
-                    map[y, x] = 0;
-                    continue;
-                }
-
                 float normalized = (map[y, x] - min) / range;
-                map[y, x] = (float)System.Math.Pow(normalized, gamma);
+                map[y, x] = (float)(System.Math.Pow(normalized, gamma) * range + min);
             }
         });
     }

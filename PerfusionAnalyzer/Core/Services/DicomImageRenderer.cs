@@ -46,12 +46,12 @@ public class DicomImageRenderer
         }
     }
 
-    public void LoadMapTextureColored(float[,] map, DescriptorType descriptor)
+    public void LoadMapTextureColored(float[,] map)
     {
         _height = map.GetLength(0);
         _width = map.GetLength(1);
 
-        byte[] pixels = NormalizeMapToRgbBytes(map, descriptor);
+        byte[] pixels = NormalizeMapToRgbBytes(map);
 
         GL.GenTextures(1, out _textureId);
         GL.BindTexture(TextureTarget.Texture2D, _textureId);
@@ -128,7 +128,7 @@ public class DicomImageRenderer
         return singleChannel;
     }
 
-    private byte[] NormalizeMapToRgbBytes(float[,] map, DescriptorType descriptor)
+    private byte[] NormalizeMapToRgbBytes(float[,] map)
     {
         int height = map.GetLength(0);
         int width = map.GetLength(1);

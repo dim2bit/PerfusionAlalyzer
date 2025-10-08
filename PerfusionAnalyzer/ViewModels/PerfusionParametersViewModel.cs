@@ -11,6 +11,8 @@ using System.Windows.Input;
 using PerfusionAnalyzer.Core.Utils;
 using System.IO;
 using Dicom.Imaging;
+using PerfusionAnalyzer.Core.Math;
+using PerfusionAnalyzer.Core.Dicom;
 
 namespace PerfusionAnalyzer.ViewModels;
 
@@ -97,6 +99,48 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
+    private string _mapsCorrelationValue;
+    public string MapsCorrelationValue
+    {
+        get => _mapsCorrelationValue;
+        set
+        {
+            if (_mapsCorrelationValue != value)
+            {
+                _mapsCorrelationValue = value;
+                OnPropertyChanged(nameof(MapsCorrelationValue));
+            }
+        }
+    }
+
+    private string _maskFileName = "* маска не завантажена";
+    public string MaskFileName
+    {
+        get => _maskFileName;
+        set
+        {
+            if (_maskFileName != value)
+            {
+                _maskFileName = value;
+                OnPropertyChanged(nameof(MaskFileName));
+            }
+        }
+    }
+
+    private string _externalMapFileName = "* карта не завантажена";
+    public string ExternalMapFileName
+    {
+        get => _externalMapFileName;
+        set
+        {
+            if (_externalMapFileName != value)
+            {
+                _externalMapFileName = value;
+                OnPropertyChanged(nameof(ExternalMapFileName));
+            }
+        }
+    }
+
     private string _aucValue;
     public string AUCValue
     {
@@ -178,6 +222,33 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
+    private float[,] _externalMap;
+    public float[,] ExternalMap
+    {
+        get => _externalMap;
+        set
+        {
+            if (_externalMap != value)
+            {
+                _externalMap = value;
+                OnPropertyChanged(nameof(ExternalMap));
+            }
+        }
+    }
+
+    public bool[,]? Mask
+    {
+        get => _processingSettings.Mask;
+        set
+        {
+            if (_processingSettings.Mask != value)
+            {
+                _processingSettings.Mask = value;
+                OnPropertyChanged(nameof(Mask));
+            }
+        }
+    }
+
     public double LeakageCoefficient
     {
         get => _processingSettings.LeakageCoefficient;
@@ -217,19 +288,6 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
-    public ushort BackgroundThreshold
-    {
-        get => _processingSettings.BackgroundThreshold;
-        set
-        {
-            if (_processingSettings.BackgroundThreshold != value)
-            {
-                _processingSettings.BackgroundThreshold = value;
-                OnPropertyChanged(nameof(BackgroundThreshold));
-            }
-        }
-    }
-
     private bool _isDataLoaded = false;
     public bool IsDataLoaded
     {
@@ -244,10 +302,14 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
+    public ICommand LoadMaskFileCommand { get; }
+    public ICommand LoadMapFileCommand { get; }
     public ICommand ExportMapCommand { get; }
 
     public PerfusionParametersViewModel()
     {
+        LoadMaskFileCommand = new RelayCommand(_ => LoadMaskFile(), _ => IsDataLoaded);
+        LoadMapFileCommand = new RelayCommand(_ => LoadMapFile(), _ => IsDataLoaded);
         ExportMapCommand = new RelayCommand(_ => ExportCurrentMapToPng(), _ =>
         {
             if (SelectedDescriptor == DescriptorType.AUC && AUCMap == null) return false;
@@ -283,6 +345,8 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
             BuildPlot(perfusionMetrics.Time, perfusionMetrics.Curve,
                 perfusionMetrics.SlicedTime, perfusionMetrics.SlicedCurve);
 
+            MapsCorrelationValue = GetCorrelation();
+
             IsDataLoaded = true;
 
             OnPropertyChanged(nameof(SelectedDescriptor));
@@ -314,17 +378,90 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
         }
     }
 
+    private void LoadMaskFile()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Виберіть файл маски",
+            Filter = "Маска (*.txt;*.bin)|*.txt;*.bin|Усі файли (*.*)|*.*"
+        };
+
+        if (dialog.ShowDialog() == DialogResult.OK)
+        {
+            string filePath = dialog.FileName;
+
+            try
+            {
+                byte[] data = File.ReadAllBytes(filePath);
+                var mask = DicomUtils.ExtractMask(data);
+
+                MaskFileName = Path.GetFileName(filePath);
+                Mask = mask;
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Помилка при завантаженні маски:\n{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
+    private void LoadMapFile()
+    {
+        using var dialog = new OpenFileDialog
+        {
+            Title = "Виберіть файл маски",
+            Filter = "DICOM Files (*.dcm)|*.dcm"
+        };
+
+        if (dialog.ShowDialog() == DialogResult.OK)
+        {
+            string filePath = dialog.FileName;
+
+            try
+            {
+                var dicomImage = new DicomImage(filePath);
+                int width = dicomImage.Width;
+                int height = dicomImage.Height;
+
+                if (AUCMap == null || AUCMap.GetLength(0) != height || AUCMap.GetLength(1) != width)
+                {
+                    System.Windows.MessageBox.Show("Розмір зовнішньої карти не співпадає з внутрішньою AUC картою.", "Помилка", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                float[,] externalMap = new float[height, width];
+                var pixels = DicomUtils.FrameToUshort(dicomImage, width, height);
+
+                if (pixels == null)
+                    throw new Exception("Не вдалося зчитати пікселі з DICOM.");
+
+                for (int y = 0; y < height; y++)
+                {
+                    for (int x = 0; x < width; x++)
+                    {
+                        externalMap[y, x] = pixels[y * width + x];
+                    }
+                }
+
+                ExternalMapFileName = Path.GetFileName(filePath);
+                ExternalMap = externalMap;
+
+                MapsCorrelationValue = GetCorrelation();
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show(
+                    $"Помилка при завантаженні карти:\n{ex.Message}", "Помилка", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+    }
+
     private void ExportCurrentMapToPng()
     {
         try
         {
-            float[,]? mapToExport = SelectedDescriptor switch
-            {
-                DescriptorType.AUC => AUCMap,
-                DescriptorType.MTT => MTTMap,
-                DescriptorType.TTP => TTPMap,
-                _ => null
-            };
+            float[,]? mapToExport = GetCurrentMap();
 
             if (mapToExport != null)
             {
@@ -409,6 +546,30 @@ public class PerfusionParametersViewModel : INotifyPropertyChanged
 
         PerfusionPlotModel = plotModel;
     }
+
+    private string GetCorrelation()
+    {
+        if (Mask == null || ExternalMap == null)
+            return string.Empty;
+
+        var map = GetCurrentMap();
+        if (map == null)
+            return string.Empty;
+
+        return CorrelationCalculator.CalculatePearson(map, ExternalMap).ToString();
+    }
+
+    private float[,]? GetCurrentMap()
+    {
+        return SelectedDescriptor switch
+        {
+            DescriptorType.AUC => _originalMaps.AUCMap,
+            DescriptorType.MTT => _originalMaps.MTTMap,
+            DescriptorType.TTP => _originalMaps.TTPMap,
+            _ => null
+        };
+    }
+
 
     public event PropertyChangedEventHandler? PropertyChanged;
     protected void OnPropertyChanged(string propName) =>

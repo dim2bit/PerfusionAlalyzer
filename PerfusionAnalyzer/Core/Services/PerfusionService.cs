@@ -9,10 +9,9 @@ namespace PerfusionAnalyzer.Core.Services;
 
 public class PerfusionService
 {
-    private const int _interpolationStepsPerInterval = 10;
     private const double _contrastRecirculationPercent = 50;
 
-    private readonly double _TE_seconds;
+    private readonly double _TE_ms;
     private readonly int _baselineCount = 3;
 
     private readonly int _height;
@@ -29,7 +28,7 @@ public class PerfusionService
         var time = DicomUtils.GetTimePoints(frames);
 
         if (time.Any(t => t < 0))
-            throw new InvalidOperationException("Одне або кілька зображень не містять часу зйомки (TriggerTime).");
+            throw new InvalidOperationException("Одне або кілька зображень не містять часу зйомки.");
 
         if (time.Distinct().Count() <= 1)
             throw new InvalidOperationException("Недостатньо різних часових точок для аналізу. Всі кадри мають однаковий час.");
@@ -40,7 +39,7 @@ public class PerfusionService
         _frames = frames;
         _time = time;
         _ushortFrames = DicomUtils.FramesToUshort(frames, _width, _height);
-        _TE_seconds = DicomUtils.GetEchoTime(_frames[0]);
+        _TE_ms = DicomUtils.GetEchoTime(_frames[0]);
         _baselineCount = System.Math.Min(_baselineCount, _frames.Count);
     }
 
@@ -69,14 +68,22 @@ public class PerfusionService
             {
                 for (int x = 0; x < _width; x++)
                 {
+                    if (settings.Mask != null && !settings.Mask[y, x])
+                    {
+                        maps.AUCMap[y, x] = 0f;
+                        maps.MTTMap[y, x] = 0f;
+                        maps.TTPMap[y, x] = 0f;
+                        continue;
+                    }
+
                     double[] intensityCurve = _ushortFrames.Select(
                         frame => (double)frame[y * _width + x]).ToArray();
 
                     var metrics = CalculateMetricsFromCurve(intensityCurve, settings);
 
-                    maps.AUCMap[y, x] = metrics.AUC;
-                    maps.MTTMap[y, x] = metrics.MTT;
-                    maps.TTPMap[y, x] = metrics.TTP;
+                    maps.AUCMap[y, x] = (metrics.AUC < 1e-4) ? 0f : metrics.AUC;
+                    maps.MTTMap[y, x] = (metrics.MTT < 1e-4) ? 0f : metrics.MTT;
+                    maps.TTPMap[y, x] = (metrics.TTP < 1e-4) ? 0f : metrics.TTP;
                 }
             });
 
@@ -86,11 +93,9 @@ public class PerfusionService
 
     public async Task<PerfusionMaps> PostProcessMapsAsync(PerfusionMaps originalMaps, ProcessingSettings settings)
     {
-        bool[,] mask = DicomUtils.CreateMask(_ushortFrames[0], _width, _height, settings.BackgroundThreshold);
-
-        var aucTask = PostProcessMapAsync(originalMaps.AUCMap, mask, settings);
-        var mttTask = PostProcessMapAsync(originalMaps.MTTMap, mask, settings);
-        var ttpTask = PostProcessMapAsync(originalMaps.TTPMap, mask, settings);
+        var aucTask = PostProcessMapAsync(originalMaps.AUCMap, settings);
+        var mttTask = PostProcessMapAsync(originalMaps.MTTMap, settings);
+        var ttpTask = PostProcessMapAsync(originalMaps.TTPMap, settings);
 
         await Task.WhenAll(aucTask, mttTask, ttpTask);
 
@@ -115,25 +120,29 @@ public class PerfusionService
                 if (intensityCurve[f] <= 0 || S0 <= 0)
                     curve[f] = 0;
                 else
-                    curve[f] = -1.0 / _TE_seconds * System.Math.Log(intensityCurve[f] / S0);
+                    curve[f] = -1.0 / _TE_ms * System.Math.Log(intensityCurve[f] / S0);
             }
         }
         else
         {
             curve = (double[])intensityCurve.Clone();
+            var Smax = intensityCurve.Max();
+            for (int i = 0; i < curve.Length; i++)
+                curve[i] = Smax - curve[i];
         }
 
         double[] filteredCurve = ApplyFilter(curve, settings.FilterType);
 
-        filteredCurve = CurveUtils.ApplyLeakageCorrection(_time, filteredCurve, settings.LeakageCoefficient);
+        var skippedTime = _time.Skip(_baselineCount).ToArray();
+        var skippedCurve = filteredCurve.Skip(_baselineCount).ToArray();
+
+        skippedCurve = CurveUtils.ApplyLeakageCorrection(skippedTime, skippedCurve, settings.LeakageCoefficient);
 
         var (slicedTime, slicedCurve) = CurveUtils.ExtractContrastCurve(
-            _time, filteredCurve, settings.ContrastArrivalPercent, _contrastRecirculationPercent);
-
-        //double[] fittedCurve = CurveUtils.FitGammaCurve(timeSlice, curveSlice);
+            skippedTime, skippedCurve, settings.ContrastArrivalPercent, _contrastRecirculationPercent);
 
         metrics.AUC = (float)PerfusionCalculator.CalculateAUC_Combined(slicedTime, slicedCurve);
-        metrics.MTT = System.Math.Clamp((float)PerfusionCalculator.CalculateMTT(slicedTime, slicedCurve), 0, 50);
+        metrics.MTT = (float)PerfusionCalculator.CalculateMTT(slicedTime, slicedCurve);
         metrics.TTP = (float)PerfusionCalculator.CalculateTTP(slicedTime, slicedCurve);
 
         metrics.Time = _time;
@@ -156,12 +165,12 @@ public class PerfusionService
         };
     }
 
-    private async Task<float[,]> PostProcessMapAsync(float[,] map, bool[,] mask, ProcessingSettings settings)
+    private async Task<float[,]> PostProcessMapAsync(float[,] map, ProcessingSettings settings)
     {
         return await Task.Run(() =>
         {
             var mapCopy = (float[,])map.Clone();
-            SignalFilter.ApplyGammaCorrection(mapCopy, mask, settings.Gamma);
+            SignalFilter.ApplyGammaCorrection(mapCopy, settings.Gamma);
             return mapCopy;
         });
     }

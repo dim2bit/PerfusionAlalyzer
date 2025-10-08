@@ -58,7 +58,7 @@ public class FramesViewModel : INotifyPropertyChanged
 
     public string CurrentFrameTimeDisplay =>
         (_time != null && !_time.Any(t => t < 0) && CurrentFrameIndex >= 0 && CurrentFrameIndex < _time.Length)
-            ? $"Час: {_time[CurrentFrameIndex]:F2} с"
+            ? $"Час: {_time[CurrentFrameIndex]:F2}"
             : "";
 
     public int CurrentFrameIndex
@@ -140,8 +140,8 @@ public class FramesViewModel : INotifyPropertyChanged
     {
         using var dialog = new OpenFileDialog
         {
-            Filter = "DICOM Files (*.dcm)|*.dcm",
             Title = "Виберіть DICOM-файл",
+            Filter = "DICOM Files (*.dcm)|*.dcm",
             Multiselect = true
         };
 

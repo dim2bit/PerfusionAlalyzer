@@ -28,6 +28,8 @@
                 x:Name="OpenTkControl"
                 Render="OpenTkControl_OnRender"
                 Grid.Row="0"
+                Width="500"
+                Height="500"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"/>
 
